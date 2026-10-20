@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../../api/client';
 import type { Employee, EmployeePage } from '../../api/types';
@@ -7,6 +7,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
 import { Pagination } from '../../components/Pagination';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { usePaginationState } from '../../hooks/usePaginationState';
 import {
   COUNTRIES,
@@ -16,31 +17,42 @@ import {
 } from '../../lib/formatMoney';
 import { useAuth } from '../auth/auth-context';
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 export function EmployeeListPage() {
   const { session } = useAuth();
   const { page, pageSize, setPage } = usePaginationState();
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
   const [department, setDepartment] = useState('');
   const [country, setCountry] = useState('');
   const [status, setStatus] = useState('');
-  const [submitted, setSubmitted] = useState({
-    search: '',
-    department: '',
-    country: '',
-    status: '',
-  });
+  const filterKey = `${debouncedSearch}\0${department}\0${country}\0${status}`;
+  const appliedFilterKey = useRef(filterKey);
+  if (appliedFilterKey.current !== filterKey) {
+    appliedFilterKey.current = filterKey;
+    setPage(1);
+  }
 
   const query = useQuery({
-    queryKey: ['employees', page, pageSize, submitted],
+    queryKey: [
+      'employees',
+      page,
+      pageSize,
+      debouncedSearch,
+      department,
+      country,
+      status,
+    ],
     queryFn: () => {
       const params = new URLSearchParams({
         page: String(page),
         pageSize: String(pageSize),
       });
-      if (submitted.search) params.set('search', submitted.search);
-      if (submitted.department) params.set('department', submitted.department);
-      if (submitted.country) params.set('country', submitted.country);
-      if (submitted.status) params.set('status', submitted.status);
+      if (debouncedSearch) params.set('search', debouncedSearch);
+      if (department) params.set('department', department);
+      if (country) params.set('country', country);
+      if (status) params.set('status', status);
       return apiFetch<EmployeePage>(
         `/api/v1/employees?${params.toString()}`,
         {},
@@ -52,14 +64,7 @@ export function EmployeeListPage() {
   return (
     <section>
       <h1>Employees</h1>
-      <form
-        className="filters"
-        onSubmit={(event) => {
-          event.preventDefault();
-          setPage(1);
-          setSubmitted({ search, department, country, status });
-        }}
-      >
+      <div className="filters">
         <label htmlFor="search">
           Search
           <input
@@ -109,8 +114,7 @@ export function EmployeeListPage() {
             ))}
           </select>
         </label>
-        <button type="submit">Apply</button>
-      </form>
+      </div>
       {query.isLoading ? <LoadingState /> : null}
       {query.isError ? (
         <ErrorState
@@ -126,6 +130,12 @@ export function EmployeeListPage() {
       ) : null}
       {query.data && query.data.items.length > 0 ? (
         <>
+        <Pagination
+            page={query.data.page}
+            pageSize={query.data.pageSize}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
           <table>
             <caption>Employee directory</caption>
             <thead>
@@ -163,12 +173,7 @@ export function EmployeeListPage() {
               ))}
             </tbody>
           </table>
-          <Pagination
-            page={query.data.page}
-            pageSize={query.data.pageSize}
-            total={query.data.total}
-            onPageChange={setPage}
-          />
+          
         </>
       ) : null}
     </section>
