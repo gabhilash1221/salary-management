@@ -237,7 +237,12 @@ Ambiguity rules: unknown department or country names return suggestions rather t
 - Source code with a README covering prerequisites, install, seed, run, test and demo steps.
 - `.env.example`, seed and test commands, and optionally a Docker Compose file for one-command startup.
 - OpenAPI documentation.
-- Short architecture note with the key decisions, trade-offs and known limitations.
+- Requirements document: [REQUIREMENTS.md](REQUIREMENTS.md).
+- Planning and design notes: [DESIGN.md](DESIGN.md).
+- Architecture note with diagrams: [architecture.md](architecture.md).
+- Prompts and instructions used with AI tools: [AI_WORKFLOW.md](AI_WORKFLOW.md).
+- Trade-off explanations: [TRADEOFFS.md](TRADEOFFS.md).
+- Performance considerations: [PERFORMANCE.md](PERFORMANCE.md).
 - Demo script: the walkthrough of search, salary update with history and audit, analytics, and a supported and an unsupported question.
 
 ## 18. Roadmap (After the Initial Release)
