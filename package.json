@@ -1,0 +1,23 @@
+{
+  "name": "salary-management",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "dotenv -e .env -- concurrently -k -n api,web \"npm run dev -w @acme/api\" \"npm run dev -w @acme/web\"",
+    "seed": "dotenv -e .env -- npm run seed -w @acme/api",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "check": "npm run lint && npm test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.4",
+    "concurrently": "^9.2.1",
+    "dotenv-cli": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
