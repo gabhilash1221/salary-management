@@ -21,7 +21,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export function EmployeeListPage() {
   const { session } = useAuth();
-  const { page, pageSize, setPage } = usePaginationState();
+  const { page, pageSize, setPage, setPageSize } = usePaginationState();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
   const [department, setDepartment] = useState('');
@@ -130,11 +130,12 @@ export function EmployeeListPage() {
       ) : null}
       {query.data && query.data.items.length > 0 ? (
         <>
-        <Pagination
+          <Pagination
             page={query.data.page}
             pageSize={query.data.pageSize}
             total={query.data.total}
             onPageChange={setPage}
+            onPageSizeChange={setPageSize}
           />
           <table>
             <caption>Employee directory</caption>
@@ -173,7 +174,6 @@ export function EmployeeListPage() {
               ))}
             </tbody>
           </table>
-          
         </>
       ) : null}
     </section>
