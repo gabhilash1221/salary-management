@@ -1,3 +1,6 @@
+import { notifySessionExpired } from '../features/auth/session-expiry';
+import { isTokenExpired, TOKEN_EXPIRED_MESSAGE } from '../features/auth/token';
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -24,7 +27,15 @@ export async function apiFetch<T>(
     const body = (await response.json().catch(() => null)) as {
       message?: string;
     } | null;
-    throw new ApiError(body?.message ?? response.statusText, response.status);
+    const message = body?.message ?? response.statusText;
+    if (
+      token &&
+      response.status === 401 &&
+      (message === TOKEN_EXPIRED_MESSAGE || isTokenExpired(token))
+    ) {
+      notifySessionExpired();
+    }
+    throw new ApiError(message, response.status);
   }
   return response.json() as Promise<T>;
 }
