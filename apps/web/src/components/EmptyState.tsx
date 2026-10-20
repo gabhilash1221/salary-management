@@ -1,3 +1,3 @@
 export function EmptyState({ message }: { message: string }) {
-  return <p className="empty">{message}</p>;
+  return <p className="text-muted">{message}</p>;
 }

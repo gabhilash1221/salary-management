@@ -1,4 +1,7 @@
 import { type FormEvent, useState } from 'react';
+import { Button } from '../../components/Button';
+import { ErrorState } from '../../components/ErrorState';
+import { controlClass, Field } from '../../components/Field';
 import { CURRENCIES } from '../../lib/formatMoney';
 
 export function SalaryForm({
@@ -33,21 +36,21 @@ export function SalaryForm({
   }
 
   return (
-    <form className="form-grid" onSubmit={submit}>
-      <label htmlFor="amount">
-        Annual amount
+    <form className="grid gap-3 sm:grid-cols-2" onSubmit={submit}>
+      <Field label="Annual amount" htmlFor="amount">
         <input
           id="amount"
+          className={controlClass}
           inputMode="decimal"
           value={amount}
           onChange={(event) => setAmount(event.target.value)}
           required
         />
-      </label>
-      <label htmlFor="currency">
-        Currency
+      </Field>
+      <Field label="Currency" htmlFor="currency">
         <select
           id="currency"
+          className={controlClass}
           value={currency}
           onChange={(event) => setCurrency(event.target.value)}
         >
@@ -57,29 +60,33 @@ export function SalaryForm({
             </option>
           ))}
         </select>
-      </label>
-      <label htmlFor="effectiveDate">
-        Effective date
+      </Field>
+      <Field label="Effective date" htmlFor="effectiveDate">
         <input
           id="effectiveDate"
+          className={controlClass}
           type="date"
           value={effectiveDate}
           onChange={(event) => setEffectiveDate(event.target.value)}
           required
         />
-      </label>
-      <label htmlFor="reason">
-        Reason
+      </Field>
+      <Field label="Reason" htmlFor="reason">
         <input
           id="reason"
+          className={controlClass}
           value={reason}
           onChange={(event) => setReason(event.target.value)}
         />
-      </label>
-      {error ? <p role="alert">{error}</p> : null}
-      <button type="submit" disabled={pending}>
+      </Field>
+      {error ? (
+        <div className="sm:col-span-2">
+          <ErrorState message={error} />
+        </div>
+      ) : null}
+      <Button type="submit" disabled={pending} className="sm:col-span-2 w-fit">
         {pending ? 'Saving…' : 'Update salary'}
-      </button>
+      </Button>
     </form>
   );
 }

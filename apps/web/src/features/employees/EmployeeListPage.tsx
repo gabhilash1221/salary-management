@@ -3,8 +3,10 @@ import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../../api/client';
 import type { Employee, EmployeePage } from '../../api/types';
+import { DataTable } from '../../components/DataTable';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
+import { controlClass, Field } from '../../components/Field';
 import { LoadingState } from '../../components/LoadingState';
 import { Pagination } from '../../components/Pagination';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
@@ -63,20 +65,20 @@ export function EmployeeListPage() {
 
   return (
     <section>
-      <h1>Employees</h1>
-      <div className="filters">
-        <label htmlFor="search">
-          Search
+      <h1 className="mb-4 text-2xl">Employees</h1>
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Field label="Search" htmlFor="search">
           <input
             id="search"
+            className={controlClass}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
-        </label>
-        <label htmlFor="department">
-          Department
+        </Field>
+        <Field label="Department" htmlFor="department">
           <select
             id="department"
+            className={controlClass}
             value={department}
             onChange={(event) => setDepartment(event.target.value)}
           >
@@ -85,11 +87,11 @@ export function EmployeeListPage() {
               <option key={item}>{item}</option>
             ))}
           </select>
-        </label>
-        <label htmlFor="country">
-          Country
+        </Field>
+        <Field label="Country" htmlFor="country">
           <select
             id="country"
+            className={controlClass}
             value={country}
             onChange={(event) => setCountry(event.target.value)}
           >
@@ -100,11 +102,11 @@ export function EmployeeListPage() {
               </option>
             ))}
           </select>
-        </label>
-        <label htmlFor="status">
-          Status
+        </Field>
+        <Field label="Status" htmlFor="status">
           <select
             id="status"
+            className={controlClass}
             value={status}
             onChange={(event) => setStatus(event.target.value)}
           >
@@ -113,7 +115,7 @@ export function EmployeeListPage() {
               <option key={item}>{item}</option>
             ))}
           </select>
-        </label>
+        </Field>
       </div>
       {query.isLoading ? <LoadingState /> : null}
       {query.isError ? (
@@ -137,53 +139,66 @@ export function EmployeeListPage() {
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
           />
-          <table>
-            <caption>Employee directory</caption>
-            <thead>
-              <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Name</th>
-                <th scope="col">Department</th>
-                <th scope="col">Country</th>
-                <th scope="col">Status</th>
-                {query.data.items.some(
-                  (employee) => 'currentSalary' in employee,
-                ) ? (
-                  <th scope="col">Current salary</th>
-                ) : null}
-              </tr>
-            </thead>
-            <tbody>
-              {query.data.items.map((employee) => (
-                <tr key={employee.id}>
-                  <td>
-                    <Link to={`/employees/${employee.employeeId}`}>
-                      {employee.employeeId}
-                    </Link>
-                  </td>
-                  <td>
-                    {employee.firstName} {employee.lastName}
-                  </td>
-                  <td>{employee.department}</td>
-                  <td>{employee.country}</td>
-                  <td>{employee.status}</td>
-                  {'currentSalary' in employee ? (
-                    <td>{salaryLabel(employee)}</td>
-                  ) : null}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable
+            caption="Employee directory"
+            emptyMessage="No employees found"
+            rows={query.data.items}
+            columns={directoryColumns(
+              query.data.items.some((employee) => 'currentSalary' in employee),
+            )}
+          />
         </>
       ) : null}
     </section>
   );
 }
 
-function salaryLabel(employee: Employee) {
-  if (!employee.currentSalary) return '—';
-  return formatMoney(
-    employee.currentSalary.amountMinor,
-    employee.currentSalary.currency,
-  );
+function directoryColumns(showSalary: boolean) {
+  const columns = [
+    {
+      key: 'id',
+      header: 'ID',
+      render: (employee: Employee) => (
+        <Link to={`/employees/${employee.employeeId}`}>
+          {employee.employeeId}
+        </Link>
+      ),
+    },
+    {
+      key: 'name',
+      header: 'Name',
+      render: (employee: Employee) =>
+        `${employee.firstName} ${employee.lastName}`,
+    },
+    {
+      key: 'department',
+      header: 'Department',
+      render: (employee: Employee) => employee.department,
+    },
+    {
+      key: 'country',
+      header: 'Country',
+      render: (employee: Employee) => employee.country,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (employee: Employee) => employee.status,
+    },
+  ];
+  if (!showSalary) return columns;
+  return [
+    ...columns,
+    {
+      key: 'salary',
+      header: 'Current salary',
+      render: (employee: Employee) =>
+        employee.currentSalary
+          ? formatMoney(
+              employee.currentSalary.amountMinor,
+              employee.currentSalary.currency,
+            )
+          : '—',
+    },
+  ];
 }

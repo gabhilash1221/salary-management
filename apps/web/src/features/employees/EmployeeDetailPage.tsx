@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { apiFetch } from '../../api/client';
 import type { Employee, Salary } from '../../api/types';
+import { Card } from '../../components/Card';
 import { DataTable } from '../../components/DataTable';
 import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
@@ -78,26 +79,43 @@ export function EmployeeDetailPage() {
   const current = employee.data.currentSalary;
 
   return (
-    <section className="stack">
+    <section className="grid gap-4">
       <p>
         <Link to="/employees">Back to directory</Link>
       </p>
-      <h1>
+      <h1 className="text-2xl">
         {employee.data.firstName} {employee.data.lastName}
       </h1>
-      <p>
-        {employee.data.employeeId} · {employee.data.department} ·{' '}
-        {employee.data.country} · {employee.data.status}
-      </p>
-      {current ? (
-        <p>
-          Current salary {formatMoney(current.amountMinor, current.currency)}{' '}
-          from {current.effectiveDate}
-        </p>
-      ) : null}
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div>
+          <dt className="text-sm text-muted">ID</dt>
+          <dd>{employee.data.employeeId}</dd>
+        </div>
+        <div>
+          <dt className="text-sm text-muted">Department</dt>
+          <dd>{employee.data.department}</dd>
+        </div>
+        <div>
+          <dt className="text-sm text-muted">Country</dt>
+          <dd>{employee.data.country}</dd>
+        </div>
+        <div>
+          <dt className="text-sm text-muted">Status</dt>
+          <dd>{employee.data.status}</dd>
+        </div>
+        {current ? (
+          <div className="col-span-2">
+            <dt className="text-sm text-muted">Current salary</dt>
+            <dd>
+              {formatMoney(current.amountMinor, current.currency)} from{' '}
+              {current.effectiveDate}
+            </dd>
+          </div>
+        ) : null}
+      </dl>
       {canUpdate ? (
-        <div className="card">
-          <h2>Update salary</h2>
+        <Card>
+          <h2 className="mb-3 text-lg">Update salary</h2>
           <SalaryForm
             pending={update.isPending}
             error={
@@ -107,7 +125,7 @@ export function EmployeeDetailPage() {
             }
             onSubmit={(input) => update.mutate(input)}
           />
-        </div>
+        </Card>
       ) : null}
       {canReadHistory ? (
         <DataTable

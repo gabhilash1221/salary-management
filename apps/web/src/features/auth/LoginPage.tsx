@@ -2,7 +2,11 @@ import { type FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../api/client';
 import type { LoginResponse } from '../../api/types';
+import { Button } from '../../components/Button';
+import { Card } from '../../components/Card';
 import { ErrorState } from '../../components/ErrorState';
+import { controlClass, Field } from '../../components/Field';
+import { ThemeToggle } from '../../components/ThemeToggle';
 import { useAuth } from './auth-context';
 
 export function LoginPage() {
@@ -34,32 +38,35 @@ export function LoginPage() {
   }
 
   return (
-    <main className="login card">
-      <h1>Sign in</h1>
-      <form className="stack" onSubmit={onSubmit}>
-        <label htmlFor="email">
-          Email
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="username"
-            required
-          />
-        </label>
-        <label htmlFor="password">
-          Password
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-        </label>
-        {error ? <ErrorState message={error} /> : null}
-        <button type="submit">Sign in</button>
-      </form>
+    <main className="mx-auto mt-10 flex w-full max-w-md flex-col items-end gap-3 px-4 sm:mt-16">
+      <ThemeToggle />
+      <Card className="w-full">
+        <h1 className="mb-4 text-2xl">Sign in</h1>
+        <form className="grid gap-3" onSubmit={onSubmit}>
+          <Field label="Email" htmlFor="email">
+            <input
+              id="email"
+              name="email"
+              type="email"
+              className={controlClass}
+              autoComplete="username"
+              required
+            />
+          </Field>
+          <Field label="Password" htmlFor="password">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              className={controlClass}
+              autoComplete="current-password"
+              required
+            />
+          </Field>
+          {error ? <ErrorState message={error} /> : null}
+          <Button type="submit">Sign in</Button>
+        </form>
+      </Card>
     </main>
   );
 }

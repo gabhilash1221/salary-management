@@ -2,7 +2,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { apiFetch } from '../../api/client';
 import type { QuestionResponse } from '../../api/types';
+import { Button } from '../../components/Button';
+import { Card } from '../../components/Card';
 import { ErrorState } from '../../components/ErrorState';
+import { controlClass, Field } from '../../components/Field';
 import { useAuth } from '../auth/auth-context';
 
 export function QuestionsPage() {
@@ -34,33 +37,32 @@ export function QuestionsPage() {
   }
 
   return (
-    <section className="stack">
-      <h1>Questions</h1>
-      <form className="stack" onSubmit={onSubmit}>
-        <label htmlFor="question">
-          Question
+    <section className="grid gap-4">
+      <h1 className="text-2xl">Questions</h1>
+      <form className="grid gap-3" onSubmit={onSubmit}>
+        <Field label="Question" htmlFor="question">
           <textarea
             id="question"
+            className={controlClass}
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
             rows={3}
           />
-        </label>
-        <button type="submit" disabled={ask.isPending}>
+        </Field>
+        <Button type="submit" disabled={ask.isPending} className="w-fit">
           Ask
-        </button>
+        </Button>
       </form>
       {supported.data ? (
-        <ul>
+        <ul className="flex flex-wrap gap-2">
           {supported.data.intents.map((intent) => (
-            <li key={intent.example}>
-              <button
-                type="button"
-                className="button"
+            <li key={intent.example} className="max-w-full">
+              <Button
+                className="h-auto whitespace-normal text-left"
                 onClick={() => setQuestion(intent.example)}
               >
                 {intent.example}
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
@@ -75,7 +77,7 @@ export function QuestionsPage() {
         />
       ) : null}
       {ask.data && !ask.data.supported ? (
-        <div className="card">
+        <Card>
           <p>{ask.data.reason}</p>
           {ask.data.clarification ? <p>{ask.data.clarification}</p> : null}
           {ask.data.suggestions.length > 0 ? (
@@ -85,17 +87,19 @@ export function QuestionsPage() {
               ))}
             </ul>
           ) : null}
-        </div>
+        </Card>
       ) : null}
       {ask.data?.supported ? (
-        <div className="card">
+        <Card>
           <p>{ask.data.definition}</p>
           <p>
             {ask.data.rowCount} rows
             {ask.data.currency ? ` · ${ask.data.currency}` : ''}
           </p>
-          <pre>{JSON.stringify(ask.data.results, null, 2)}</pre>
-        </div>
+          <pre className="overflow-auto text-sm">
+            {JSON.stringify(ask.data.results, null, 2)}
+          </pre>
+        </Card>
       ) : null}
     </section>
   );

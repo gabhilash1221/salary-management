@@ -4,6 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Salary Management</title>
+    <script>
+      (() => {
+        let stored = null;
+        let night = false;
+        try {
+          stored = localStorage.getItem("salary-theme");
+          night =
+            stored === "night" ||
+            (stored !== "day" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+        } catch {
+          night = false;
+        }
+        if (night) document.documentElement.classList.add("dark");
+        document.documentElement.style.colorScheme = night ? "dark" : "light";
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

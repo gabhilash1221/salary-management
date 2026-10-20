@@ -2,7 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { apiFetch } from '../../api/client';
 import type { SummaryRow } from '../../api/types';
+import { DataTable } from '../../components/DataTable';
+import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
+import { controlClass, Field } from '../../components/Field';
 import { LoadingState } from '../../components/LoadingState';
 import { formatMoney } from '../../lib/formatMoney';
 import { useAuth } from '../auth/auth-context';
@@ -21,67 +24,69 @@ export function AnalyticsPage() {
   });
 
   return (
-    <section>
-      <h1>Compensation analytics</h1>
-      <label htmlFor="groupBy">
-        Group by
-        <select
-          id="groupBy"
-          value={groupBy}
-          onChange={(event) => setGroupBy(event.target.value)}
-        >
-          <option value="department">Department</option>
-          <option value="country">Country</option>
-          <option value="employmentStatus">Employment status</option>
-        </select>
-      </label>
-      {summary.isLoading ? <LoadingState /> : null}
-      {summary.isError ? (
-        <ErrorState
-          message={
-            summary.error instanceof Error
-              ? summary.error.message
-              : 'Could not load analytics'
-          }
-        />
-      ) : null}
-      {summary.data ? <p>{summary.data.definition}</p> : null}
+    <section className="grid gap-4">
+      <h1 className="text-2xl">Compensation analytics</h1>
+      <div className="grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start">
+        <Field label="Group by" htmlFor="groupBy">
+          <select
+            id="groupBy"
+            className={controlClass}
+            value={groupBy}
+            onChange={(event) => setGroupBy(event.target.value)}
+          >
+            <option value="department">Department</option>
+            <option value="country">Country</option>
+            <option value="employmentStatus">Employment status</option>
+          </select>
+        </Field>
+        {summary.isLoading ? <LoadingState /> : null}
+        {summary.isError ? (
+          <ErrorState
+            message={
+              summary.error instanceof Error
+                ? summary.error.message
+                : 'Could not load analytics'
+            }
+          />
+        ) : null}
+        {summary.data ? (
+          <p className="text-sm text-muted">{summary.data.definition}</p>
+        ) : null}
+      </div>
       {summary.data && summary.data.results.length === 0 ? (
-        <p className="empty">No groups to show</p>
+        <EmptyState message="No groups to show" />
       ) : null}
       {summary.data && summary.data.results.length > 0 ? (
-        <table>
-          <caption>Salary summary</caption>
-          <thead>
-            <tr>
-              <th scope="col">Group</th>
-              <th scope="col">Currency</th>
-              <th scope="col">Count</th>
-              <th scope="col">Median</th>
-            </tr>
-          </thead>
-          <tbody>
-            {summary.data.results.map((row) => (
-              <tr
-                key={`${row.currency}-${row.department ?? ''}-${row.country ?? ''}-${row.employmentStatus ?? ''}`}
-              >
-                <td>
-                  {row.department ??
-                    row.country ??
-                    row.employmentStatus ??
-                    'All'}
-                </td>
-                <td>{row.currency}</td>
-                <td>{row.count}</td>
-                <td>
-                  {row.suppressed || row.median === undefined
-                    ? 'Suppressed'
-                    : formatMoney(row.median, row.currency)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTable
+          caption="Salary summary"
+          emptyMessage="No groups to show"
+          rows={summary.data.results}
+          rowKey={(row) =>
+            `${row.currency}-${row.department ?? ''}-${row.country ?? ''}-${row.employmentStatus ?? ''}`
+          }
+          columns={[
+            {
+              key: 'group',
+              header: 'Group',
+              render: (row) =>
+                row.department ?? row.country ?? row.employmentStatus ?? 'All',
+            },
+            {
+              key: 'currency',
+              header: 'Currency',
+              render: (row) => row.currency,
+            },
+            { key: 'count', header: 'Count', render: (row) => row.count },
+            {
+              key: 'median',
+              header: 'Median',
+              render: (row) =>
+                row.suppressed || row.median === undefined
+                  ? 'Suppressed'
+                  : formatMoney(row.median, row.currency),
+            },
+          ]}
+        />
       ) : null}
     </section>
   );

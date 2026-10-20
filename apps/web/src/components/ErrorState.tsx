@@ -1,6 +1,6 @@
 export function ErrorState({ message }: { message: string }) {
   return (
-    <p className="error" role="alert">
+    <p className="text-danger" role="alert">
       {message}
     </p>
   );

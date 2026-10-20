@@ -36,7 +36,7 @@ export function AuditPage() {
 
   return (
     <section>
-      <h1>Audit trail</h1>
+      <h1 className="mb-4 text-2xl">Audit trail</h1>
       <DataTable
         caption="Recent audit entries"
         emptyMessage="No audit entries yet"
