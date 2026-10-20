@@ -5,7 +5,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import type { AuthSession } from '../api/types';
+import type { AuthSession } from '../../api/types';
 
 type AuthContextValue = {
   session: AuthSession | null;
