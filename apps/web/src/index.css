@@ -138,3 +138,20 @@ caption {
   max-width: 420px;
   margin: 4rem auto;
 }
+
+.toast-viewport {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  z-index: 20;
+  transform: translateX(-50%);
+}
+
+.toast {
+  margin: 0;
+  background: #3d2a12;
+  color: #fff8ee;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 8px 24px rgba(16, 32, 51, 0.18);
+}

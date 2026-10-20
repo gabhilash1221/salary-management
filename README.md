@@ -40,4 +40,14 @@ The seed creates one user for each role. The password is `Password123!` unless `
 
 Open http://localhost:5173 after `npm run dev`. API docs are at http://localhost:3000/api/docs.
 
-The walkthrough is in [docs/demo-script.md](docs/demo-script.md). Architecture choices are in [docs/architecture.md](docs/architecture.md).
+## Documentation
+
+| Document | Contents |
+| --- | --- |
+| [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | Product requirements and acceptance criteria |
+| [docs/DESIGN.md](docs/DESIGN.md) | Planning and design notes |
+| [docs/architecture.md](docs/architecture.md) | Modules, access rules, and architecture diagrams |
+| [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md) | Prompts and instructions used with AI tools |
+| [docs/TRADEOFFS.md](docs/TRADEOFFS.md) | Trade-off explanations |
+| [docs/PERFORMANCE.md](docs/PERFORMANCE.md) | Performance targets and how the design addresses them |
+| [docs/demo-script.md](docs/demo-script.md) | Demo walkthrough |

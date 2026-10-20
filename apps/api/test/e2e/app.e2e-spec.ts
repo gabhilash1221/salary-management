@@ -1,4 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
@@ -83,5 +84,22 @@ describe('API access', () => {
       .set('Authorization', `Bearer ${hr.body.accessToken}`);
     expect(allowed.status).toBe(200);
     expect(allowed.body.definition).toEqual(expect.any(String));
+  });
+
+  it('tells the client when the access token is expired', async () => {
+    const jwt = app.get(JwtService);
+    const token = await jwt.signAsync(
+      {
+        userId: 'user_hr_manager',
+        email: 'hr.manager@acme.test',
+        role: 'HR_MANAGER',
+      },
+      { expiresIn: -10 },
+    );
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/employees')
+      .set('Authorization', `Bearer ${token}`);
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('The token is expired');
   });
 });
