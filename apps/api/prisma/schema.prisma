@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id              String         @id
+  employeeId      String         @unique
+  firstName       String
+  lastName        String
+  firstNameKey    String
+  lastNameKey     String
+  email           String         @unique
+  department      String
+  country         String
+  jobTitle        String
+  status          String
+  hireDate        DateTime
+  terminationDate DateTime?
+  version         Int            @default(1)
+  createdAt       DateTime
+  updatedAt       DateTime
+  salaryRecords   SalaryRecord[]
+
+  @@index([department])
+  @@index([country])
+  @@index([status])
+  @@index([lastName, firstName])
+  @@index([firstNameKey])
+  @@index([lastNameKey])
+}
+
+model SalaryRecord {
+  id              String   @id
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [employeeId])
+  amountMinor     Int
+  currency        String
+  effectiveDate   DateTime
+  reason          String?
+  createdByUserId String
+  createdAt       DateTime
+
+  @@unique([employeeId, effectiveDate])
+  @@index([employeeId, effectiveDate])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  timestamp   DateTime @default(now())
+  actorUserId String
+  actorRole   String
+  action      String
+  entityType  String
+  entityId    String
+  oldValue    String?
+  newValue    String?
+  reason      String?
+  requestId   String?
+
+  @@index([entityId])
+  @@index([actorUserId])
+  @@index([timestamp])
+}
+
+model User {
+  id           String   @id
+  email        String   @unique
+  passwordHash String
+  role         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime
+}
