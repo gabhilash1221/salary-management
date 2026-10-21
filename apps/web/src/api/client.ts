@@ -58,7 +58,16 @@ export async function apiDownload(
 
 async function readError(response: Response): Promise<ApiError> {
   const body = (await response.json().catch(() => null)) as {
-    message?: string;
+    message?: unknown;
   } | null;
-  return new ApiError(body?.message ?? response.statusText, response.status);
+  return new ApiError(
+    errorMessage(body?.message, response.statusText),
+    response.status,
+  );
+}
+
+function errorMessage(message: unknown, fallback: string): string {
+  if (Array.isArray(message)) return message.map(String).join(' ');
+  if (typeof message === 'string' && message !== '') return message;
+  return fallback;
 }

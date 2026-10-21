@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react';
 import { Button } from '../../components/Button';
 import { ErrorState } from '../../components/ErrorState';
 import { controlClass, Field } from '../../components/Field';
+import { useI18n } from '../../i18n/locale-context';
 import { CURRENCIES } from '../../lib/formatMoney';
 
 export function SalaryForm({
@@ -29,16 +30,17 @@ export function SalaryForm({
   const [effectiveDate, setEffectiveDate] = useState(earliestDate);
   const [reason, setReason] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
+  const { t } = useI18n();
 
   function submit(event: FormEvent) {
     event.preventDefault();
     const major = Number(amount.replace(/,/g, ''));
     if (!Number.isFinite(major) || major <= 0) {
-      setLocalError('Enter an annual amount greater than zero.');
+      setLocalError(t('salary.amountError'));
       return;
     }
     if (earliestDate && effectiveDate < earliestDate) {
-      setLocalError(`Effective date must be ${earliestDate} or a later date.`);
+      setLocalError(t('salary.dateError', { date: earliestDate }));
       return;
     }
     setLocalError(null);
@@ -54,7 +56,7 @@ export function SalaryForm({
 
   return (
     <form className="grid gap-3 sm:grid-cols-2" onSubmit={submit}>
-      <Field label="Annual amount" htmlFor="amount">
+      <Field label={t('salary.annual')} htmlFor="amount">
         <input
           id="amount"
           className={controlClass}
@@ -64,7 +66,7 @@ export function SalaryForm({
           required
         />
       </Field>
-      <Field label="Currency" htmlFor="currency">
+      <Field label={t('salary.currency')} htmlFor="currency">
         <select
           id="currency"
           className={controlClass}
@@ -78,7 +80,7 @@ export function SalaryForm({
           ))}
         </select>
       </Field>
-      <Field label="Effective date" htmlFor="effectiveDate">
+      <Field label={t('salary.effective')} htmlFor="effectiveDate">
         <input
           id="effectiveDate"
           className={controlClass}
@@ -91,11 +93,13 @@ export function SalaryForm({
       </Field>
       {latestSalaryDate ? (
         <p className="text-sm text-muted sm:col-span-2">
-          Latest salary record is {latestSalaryDate}. Use {earliestDate} or a
-          later date.
+          {t('salary.latest', {
+            latest: latestSalaryDate,
+            earliest: earliestDate,
+          })}
         </p>
       ) : null}
-      <Field label="Reason" htmlFor="reason">
+      <Field label={t('salary.reason')} htmlFor="reason">
         <input
           id="reason"
           className={controlClass}
@@ -109,7 +113,7 @@ export function SalaryForm({
         </div>
       ) : null}
       <Button type="submit" disabled={pending} className="sm:col-span-2 w-fit">
-        {pending ? 'Saving…' : 'Update salary'}
+        {pending ? t('common.saving') : t('salary.update')}
       </Button>
     </form>
   );

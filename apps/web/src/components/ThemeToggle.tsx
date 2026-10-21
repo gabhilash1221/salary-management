@@ -1,4 +1,5 @@
 import { useTheme } from '../app/theme-context';
+import { useI18n } from '../i18n/locale-context';
 
 export function ThemeToggle({
   variant = 'surface',
@@ -6,6 +7,7 @@ export function ThemeToggle({
   variant?: 'surface' | 'topbar';
 }) {
   const { theme, toggleTheme } = useTheme();
+  const { t } = useI18n();
   const night = theme === 'night';
   const tone =
     variant === 'topbar'
@@ -21,7 +23,7 @@ export function ThemeToggle({
       aria-pressed={night}
       onClick={toggleTheme}
     >
-      {night ? 'Day' : 'Night'}
+      {night ? t('theme.day') : t('theme.night')}
     </button>
   );
 }

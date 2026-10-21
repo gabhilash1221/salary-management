@@ -19,16 +19,18 @@ salary-management/
 │   │   └── test/                    # unit specs and supertest e2e
 │   └── web/                         # React, Vite, Tailwind
 │       └── src/
-│           ├── app/                 # router, providers, day/night theme
+│           ├── app/                 # router, providers, theme socket
 │           ├── api/
 │           ├── components/          # Button, DataTable, charts, states
 │           ├── features/
 │           │   ├── auth/
-│           │   ├── employees/       # directory and bulk import
+│           │   ├── employees/       # directory, edit, and bulk import
+│           │   ├── profile/         # name, photo, password
 │           │   ├── salary/
 │           │   ├── analytics/
 │           │   ├── questions/
 │           │   └── audit/
+│           ├── i18n/                # English and Portuguese catalogs
 │           ├── hooks/
 │           └── lib/
 ├── docs/

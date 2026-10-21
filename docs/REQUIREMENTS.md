@@ -10,7 +10,7 @@ Replace spreadsheet-based salary management for 10,000 employees across multiple
 
 | Role | Description | Permissions |
 | --- | --- | --- |
-| HR Manager (primary) | Finds employees, imports employees, updates salaries, analyses compensation | Read/write salary, bulk-import employees, view analytics, ask questions, view audit trail |
+| HR Manager (primary) | Finds employees, maintains the directory, imports employees, updates salaries, analyses compensation | Read/write employees and salary, bulk-import employees, view analytics, ask questions, view audit trail |
 | HR Viewer | Read-only HR staff | Read salary, analytics and Q\&A; no updates |
 | Directory User | Non-compensation staff | Employee directory only; no salary fields anywhere (including analytics and Q&A) |
 | Auditor | Compliance reviewer | Read-only audit trail and salary history |
@@ -22,13 +22,16 @@ Authentication for the initial release uses seeded demo users with hashed passwo
 ### In scope
 
 1. Employee directory with search, filters and server-side pagination.
-2. Bulk employee import from Excel (`.xlsx`) and CSV, with templates, preview, partial results, and an error report.
-3. Salary management with preserved history and audit trail.
-4. Compensation analytics computed by the backend.
-5. Constrained natural-language question answering.
-6. Role-based access control, input validation and audit logging.
-7. Reproducible seed script for exactly 10,000 synthetic employees.
-8. Automated tests, API documentation and documented deployment steps.
+2. HR Manager create, edit, and delete for employees, with column sorting in the directory.
+3. Bulk employee import from Excel (`.xlsx`) and CSV, with templates, preview, partial results, and an Excel feedback file.
+4. Salary management with preserved history and audit trail. Deleting an employee also removes that employee's salary history.
+5. Compensation analytics computed by the backend.
+6. Constrained natural-language question answering, including Portuguese names for supported countries and departments.
+7. Role-based access control, input validation and audit logging.
+8. A profile for display name, password, and an optional photo, plus day/night theme synced across that user's open sessions.
+9. English and Portuguese interface text. Stored employee values stay in English names and country codes.
+10. Reproducible seed script for exactly 10,000 synthetic employees, including Portuguese-speaking countries.
+11. Automated tests, API documentation and documented deployment steps.
 
 ### Out of scope for the initial release
 
@@ -41,14 +44,16 @@ Approval workflows, multi-level compensation reviews and predictive salary recom
 - Search by employee ID (exact) or name (case-insensitive, contains match on first or last name).
 - Filter by department, country and employment status; filters combine with AND.
 - Server-side pagination: default page size 25, maximum 100; response includes total count, page and page size.
-- Sort by name, employee ID, department, hire date; default is name ascending with a stable tie-breaker on ID.
+- Sort by name, employee ID, department, country, status, hire date, and current salary. Default is name ascending with a stable tie-breaker on ID. A salary sort from a role that cannot see salary falls back to name.
 - Directory responses include salary fields only for roles permitted to see them.
+- HR Manager can add an employee, edit directory fields, and delete an employee. A blank employee ID on create receives the next `EMP-######`. Salary is changed on the employee record, not in the directory edit form.
+- The directory table scrolls in the remaining page height. Filters, pagination, and column headers stay in place.
 
 ### FR-2 Salary management
 
 - View an employee's current salary: amount, currency, effective date.
 - Update salary with amount, currency, effective date and an optional reason/comment.
-- Every update creates a new salary history record; previous records are never modified or deleted.
+- Every update creates a new salary history record. Those records are not edited in place. They are removed only when the employee is deleted.
 - Every update creates an audit record in the same database transaction as the history record.
 - View full salary history for an employee, newest first.
 - Concurrent edits are detected with optimistic concurrency: the update request carries the employee's version and the API returns 409 Conflict when it is stale.
@@ -72,11 +77,13 @@ Approval workflows, multi-level compensation reviews and predictive salary recom
 
 - Audit entries are append-only and have no update or delete API.
 - Authorized roles can view and filter the audit trail by employee, actor, action and date range, with pagination.
-- Salary updates write `SALARY_UPDATE`. A bulk import writes `EMPLOYEE_IMPORT` for each created employee and `SALARY_UPDATE` when that row includes a hire salary.
+- Salary updates write `SALARY_UPDATE`. A bulk import writes `EMPLOYEE_IMPORT` for each created employee and `SALARY_UPDATE` when that row includes a hire salary. Creating, editing, and deleting an employee write `EMPLOYEE_CREATE`, `EMPLOYEE_UPDATE`, and `EMPLOYEE_DELETE`.
 
 ### FR-6 Bulk employee import
 
-- HR Manager can download an Excel template and a CSV template from the employee directory. Both use the same headers and sample rows.
+- HR Manager opens bulk import from the employee directory. The templates, file picker, preview, and feedback download stay in that dialog.
+- HR Manager can download an Excel template and a CSV template. Both use the same headers and sample rows.
+- Department, status, and country cells accept the English value or the Portuguese name. The stored department and status stay English, and the stored country stays the ISO code.
 - HR Manager can upload `.xlsx` or `.csv`. The API checks file type, a 2 MB size limit, required columns, field formats, mandatory values, and duplicates.
 - Preview validates the file and writes nothing. Confirm uploads the same file again; the server parses it again and does not trust a client-supplied row list.
 - Invalid rows are highlighted with messages. Duplicate employee IDs or emails, in the file or already stored, are skipped and are not created.
@@ -84,13 +91,27 @@ Approval workflows, multi-level compensation reviews and predictive salary recom
 - The result reports records processed, imported, failed, and skipped. After confirm, a dialog shows how many employees imported and how many failed. The browser can download an Excel feedback file with every row, an import result, and a feedback message.
 - Other roles cannot call the import endpoints.
 
+### FR-7 Profile and theme
+
+- Any signed-in user can read their profile: email, role, display name, theme, and whether a photo is stored.
+- The user can change the display name. The avatar uses the initials of that name when no photo is stored.
+- The user can upload a PNG, JPEG, or WebP photo up to 2 MB, or remove it. The API checks the file signature.
+- The user can change the password by sending the current password and a new password of at least 8 characters.
+- Day and night can be chosen from the header and from the sign-in page. A signed-in choice is stored on the user and sent to that user's other open sessions over the WebSocket at `/api/v1/theme`. The sign-in page keeps its choice in the browser only.
+
+### FR-8 Language
+
+- The interface can be shown in English or Portuguese. The choice is stored in the browser.
+- Navigation, forms, tables, profile, and analytics chrome follow the language. Values saved by the API stay English department and status names and ISO country codes. The screen shows the translated label.
+- Supported questions keep their English examples. The parser also accepts Portuguese country and department names, and a few Portuguese dimension words, inside those English sentence shapes.
+
 ## 5. Domain Rules
 
 | Rule | Definition |
 | --- | --- |
 | Money representation | Amounts stored as integers in minor units (e.g. cents, paise) with an ISO 4217 currency code. No floating point. |
 | Valid amount | Greater than zero, within the configured maximum. SQLite stores the value as a 32-bit integer, so the stored cap is also `2,147,483,647` minor units. |
-| Currency | Must be a supported ISO 4217 code. Each employee has one active currency at a time; a currency change creates a normal history record and is audited. |
+| Currency | Must be one of INR, USD, EUR, GBP, CAD, BRL, AOA, MZN, CVE, XOF, or STN. Each employee has one active currency at a time; a currency change creates a normal history record and is audited. |
 | Effective date | Not earlier than the employee's hire date. Must be later than the effective date of the latest existing record unless an explicit backdating rule is enabled. Future-dated changes are allowed. |
 | Current salary | The record with the latest effective date that is on or before today. Future-dated records do not count until their date arrives. |
 | Employment status | Active, On Leave, Terminated. Analytics default to Active and On Leave; Terminated is included only when requested. |
@@ -113,7 +134,7 @@ id, timestamp, actorUserId, actorRole, action (e.g. SALARY\_UPDATE, EMPLOYEE\_IM
 
 ### User
 
-id, email (unique), passwordHash, role, isActive, createdAt.
+id, email (unique), passwordHash, role, displayName, theme (`day` or `night`), avatar (nullable bytes), avatarType (nullable), isActive, createdAt.
 
 ### Indexes
 
@@ -126,7 +147,17 @@ All endpoints are under `/api/v1`, require a bearer token (except login), valida
 | Method | Path | Purpose | Roles |
 | --- | --- | --- | --- |
 | POST | /auth/login | Obtain access token | Public |
+| GET | /auth/me | Signed-in profile | All |
+| PATCH | /auth/profile | Change display name | All |
+| PATCH | /auth/theme | Store day or night and notify that user's sockets | All |
+| PATCH | /auth/password | Change password | All |
+| POST | /auth/avatar | Upload a profile photo | All |
+| DELETE | /auth/avatar | Remove the profile photo | All |
+| GET | /auth/avatar | Download the profile photo | All |
 | GET | /employees | Search, filter, sort, paginate | All |
+| POST | /employees | Create an employee | HR Manager |
+| PATCH | /employees/:id | Update directory fields | HR Manager |
+| DELETE | /employees/:id | Delete the employee and salary history | HR Manager |
 | GET | /employees/:id | Employee detail (salary fields by role) | All |
 | GET | /employees/import/templates/employees.csv | CSV import template | HR Manager |
 | GET | /employees/import/templates/employees.xlsx | Excel import template | HR Manager |
@@ -164,7 +195,7 @@ Interactive documentation is exposed through OpenAPI (Swagger) and kept in sync 
 | Top/bottom groups by metric | Which department has the highest average salary in Canada? |
 | Employee current salary | What is the current salary of EMP-000123? |
 
-Filters supported in questions: department, country, employment status, currency.
+Filters supported in questions: department, country, employment status, currency. Country and department filters accept the English name and the Portuguese alias. The stored filter is still the country code or the English department name.
 
 ### 9.2 Response contract
 
@@ -184,7 +215,8 @@ Ambiguity rules: unknown department or country names return suggestions rather t
 ## 10. Security and Integrity
 
 - Role-based access control enforced in the backend on every endpoint and at field level (salary fields stripped for Directory Users in directory, analytics and Q&A responses).
-- Passwords hashed with a modern algorithm (argon2 or bcrypt); short-lived JWTs; login rate limiting.
+- Passwords hashed with bcrypt. Seeded demo hashes use a fixed salt so re-seeding stays repeatable. A password change uses a random salt. Tokens are short-lived JWTs. Login is rate limited.
+- The theme WebSocket authenticates the same JWT from the query string and only publishes to that user's sockets.
 - All inputs validated and sanitized; Prisma parameterized queries only; no raw SQL built from user input.
 - Import files stay in memory, are limited to 2 MB and 2,000 data rows, and are rejected when the type, signature, or columns are wrong. Cells that start with `=`, `+`, `-`, or `@` are rejected. The upload is not written to disk.
 - Audit entries record actor, role, action, entity, old and new values, reason and request ID; sensitive reads of salary data by non-HR roles are denied and logged.
@@ -206,7 +238,7 @@ Ambiguity rules: unknown department or country names return suggestions rather t
 ## 12. Seed Data
 
 - Exactly 10,000 synthetic employees, generated from a fixed random seed with a documented command (for example `npm run seed`). Re-running resets and regenerates the identical dataset.
-- Multiple countries, each with a realistic currency (for example INR, USD, EUR, GBP, CAD) and plausible salary ranges per department and country.
+- Countries are India, the United States, Germany, the United Kingdom, Canada, Portugal, Brazil, Angola, Mozambique, Cape Verde, Guinea-Bissau, São Tomé and Príncipe, and Timor-Leste. Currencies are INR, USD, EUR, GBP, CAD, BRL, AOA, MZN, CVE, XOF, and STN. Portugal uses EUR and Timor-Leste uses USD. Salary ranges stay inside a 32-bit minor-unit integer.
 - Realistic distributions of departments, job titles, hire dates and statuses, including some Terminated and On Leave employees.
 - Between one and five salary history records per employee, consistent with hire dates.
 - Edge cases: duplicate names, long or accented names, employees at salary range boundaries, future-dated salary changes, and small groups below the suppression threshold.
@@ -219,7 +251,7 @@ Ambiguity rules: unknown department or country names return suggestions rather t
 - **Integration (API):** pagination across all 10,000 records without gaps or duplicates, search and filters, salary update creating history and audit records, rollback on failure, 409 on stale version, RBAC for each role, validation errors.
 - **Bulk import:** CSV and Excel templates, missing columns, invalid files, in-file and database duplicates, partial success, authorization, and the employee-directory import panel.
 - **Q&A:** every supported intent matches a direct database query; unsupported, ambiguous and injection inputs are rejected.
-- **Frontend:** component tests for directory and salary forms; one end-to-end flow (search, open employee, update salary, see history).
+- **Frontend:** component tests for directory, import, salary forms, profile, and the language catalog; one end-to-end flow (search, open employee, update salary, see history).
 - **Continuous check:** tests and lint run with a single command and in CI.
 
 ## 14. Success Criteria
@@ -235,6 +267,8 @@ Ambiguity rules: unknown department or country names return suggestions rather t
 9. Automated tests cover the core business rules and critical API behavior, and all pass.
 10. A reviewer can install, seed, run and demonstrate the app by following the README.
 11. An HR Manager can download either import template, upload it, preview invalid and duplicate rows, confirm the ready rows, and download an Excel feedback file. A second upload of the same people is skipped instead of creating duplicates.
+12. A signed-in user can change their display name and password, upload or remove a profile photo, and see a theme change appear on their other open sessions.
+13. Switching the interface to Portuguese translates the chrome and still shows the same stored employees. Import accepts a Portuguese department or country name and stores the English value or country code.
 
 ## 15. Deliberate Non-Goals
 
@@ -250,6 +284,9 @@ Ambiguity rules: unknown department or country names return suggestions rather t
 - **Architecture:** a modular monolith (auth, employees, salary, analytics, questions, audit modules) rather than distributed services. The web app keeps its own response types. There is no shared package.
 - **Bulk import:** preview, then confirm. Confirm re-parses the file. Ready rows from one confirm are saved in one transaction; invalid rows are excluded and reported, and duplicates are skipped. The cap is 2,000 rows and 2 MB so one SQLite writer and a 30 second transaction stay reliable. Excel uses ExcelJS. CSV is parsed in the API. The feedback workbook is built in the browser from the API response, so the server does not store a second file. Amounts above the SQLite 32-bit integer limit are rejected even when `MAX_AMOUNT_MINOR` is higher.
 - **Sessions:** JWTs are short-lived by default (15 minutes when `JWT_EXPIRES_IN` is unset). The example env uses one day so a demo walkthrough does not expire mid-script.
+- **Theme:** the signed-in theme is a user field plus a WebSocket fan-out to that user's sockets. The token travels in the query string because the browser WebSocket API cannot set `Authorization`. Logged-out theme changes stay in `localStorage`.
+- **Language:** English and Portuguese are web catalogs. They are not stored on the user and are not broadcast. API records stay language-neutral codes and English department and status names, so a language switch does not rewrite the database. Portuguese aliases are accepted at import and in the question parser.
+- **Profile photos:** stored as bytes on the user row, limited to 2 MB and to PNG, JPEG, and WebP signatures. There is no separate object store.
 - **AI:** optional and constrained; deterministic calculations are the source of every compensation fact. Charts draw figures the API already calculated.
 - **Synthetic data:** realistic but not derived from any real person or company. Template samples use `EMP-900001` and `EMP-900002`, above the seeded `EMP-000001`–`EMP-010000` range.
 
@@ -259,11 +296,11 @@ Ambiguity rules: unknown department or country names return suggestions rather t
 - `.env.example`, seed and test commands, and optionally a Docker Compose file for one-command startup.
 - OpenAPI documentation.
 - Short architecture note with the key decisions, trade-offs and known limitations.
-- Demo script: the walkthrough of search, bulk import, salary update with history and audit, analytics, and a supported and an unsupported question.
+- Demo script: the walkthrough of search, language, theme, profile, bulk import, salary update with history and audit, analytics, and a supported and an unsupported question.
 
 ## 18. Roadmap (After the Initial Release)
 
-Bulk employee import is implemented. See FR-6 for its limits.
+Bulk employee import, directory editing, English and Portuguese, profile, and live theme sync are implemented. See FR-6, FR-7, and FR-8 for their limits. A fully translated question language, and language sync across devices, are not in this release.
 
 | Item | Why deferred |
 | --- | --- |

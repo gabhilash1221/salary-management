@@ -51,6 +51,30 @@ describe('RuleBasedInterpreter', () => {
       },
     });
     expect(
+      interpreter.interpret(
+        'What is the median salary in São Tomé e Príncipe by departamento?',
+      ),
+    ).toEqual({
+      supported: true,
+      intent: {
+        type: 'aggregate',
+        metric: 'median',
+        groupBy: ['department'],
+        filters: { country: 'ST' },
+      },
+    });
+    expect(
+      interpreter.interpret(
+        'Show the salary distribution for Engenharia in Portugal',
+      ),
+    ).toEqual({
+      supported: true,
+      intent: {
+        type: 'distribution',
+        filters: { department: 'Engineering', country: 'PT' },
+      },
+    });
+    expect(
       interpreter.interpret('What is the current salary of EMP-000123?'),
     ).toEqual({
       supported: true,

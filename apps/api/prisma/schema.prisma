@@ -72,6 +72,10 @@ model User {
   email        String   @unique
   passwordHash String
   role         String
+  displayName  String   @default("")
+  theme        String   @default("day")
+  avatar       Bytes?
+  avatarType   String?
   isActive     Boolean  @default(true)
   createdAt    DateTime
 }

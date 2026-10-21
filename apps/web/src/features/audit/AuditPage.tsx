@@ -3,6 +3,8 @@ import { apiFetch } from '../../api/client';
 import { DataTable } from '../../components/DataTable';
 import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
+import { roleLabel } from '../../i18n/catalog';
+import { useI18n } from '../../i18n/locale-context';
 import { useAuth } from '../auth/auth-context';
 
 type AuditRow = {
@@ -16,6 +18,7 @@ type AuditRow = {
 
 export function AuditPage() {
   const { session } = useAuth();
+  const { locale, t } = useI18n();
   const audit = useQuery({
     queryKey: ['audit'],
     queryFn: () =>
@@ -29,30 +32,42 @@ export function AuditPage() {
         message={
           audit.error instanceof Error
             ? audit.error.message
-            : 'Could not load the audit trail'
+            : t('audit.loadError')
         }
       />
     );
 
   return (
     <section>
-      <h1 className="mb-4 text-2xl">Audit trail</h1>
+      <h1 className="mb-4 text-2xl">{t('audit.title')}</h1>
       <DataTable
-        caption="Recent audit entries"
-        emptyMessage="No audit entries yet"
+        caption={t('audit.caption')}
+        emptyMessage={t('audit.empty')}
         rows={audit.data?.items ?? []}
         columns={[
-          { key: 'time', header: 'When', render: (row) => row.timestamp },
-          { key: 'action', header: 'Action', render: (row) => row.action },
+          {
+            key: 'time',
+            header: t('audit.when'),
+            render: (row) => row.timestamp,
+          },
+          {
+            key: 'action',
+            header: t('audit.action'),
+            render: (row) => row.action,
+          },
           {
             key: 'actor',
-            header: 'Actor role',
-            render: (row) => row.actorRole,
+            header: t('audit.actor'),
+            render: (row) => roleLabel(locale, row.actorRole),
           },
-          { key: 'entity', header: 'Employee', render: (row) => row.entityId },
+          {
+            key: 'entity',
+            header: t('import.employee'),
+            render: (row) => row.entityId,
+          },
           {
             key: 'reason',
-            header: 'Reason',
+            header: t('salary.reason'),
             render: (row) => row.reason ?? '—',
           },
         ]}

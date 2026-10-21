@@ -4,6 +4,12 @@ export const SUPPORTED_CURRENCIES = [
   'EUR',
   'GBP',
   'CAD',
+  'BRL',
+  'AOA',
+  'MZN',
+  'CVE',
+  'XOF',
+  'STN',
 ] as const;
 
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
@@ -58,6 +64,14 @@ export const COUNTRIES = [
   { code: 'DE', name: 'Germany', currency: 'EUR' },
   { code: 'GB', name: 'United Kingdom', currency: 'GBP' },
   { code: 'CA', name: 'Canada', currency: 'CAD' },
+  { code: 'PT', name: 'Portugal', currency: 'EUR' },
+  { code: 'BR', name: 'Brazil', currency: 'BRL' },
+  { code: 'AO', name: 'Angola', currency: 'AOA' },
+  { code: 'MZ', name: 'Mozambique', currency: 'MZN' },
+  { code: 'CV', name: 'Cape Verde', currency: 'CVE' },
+  { code: 'GW', name: 'Guinea-Bissau', currency: 'XOF' },
+  { code: 'ST', name: 'São Tomé and Príncipe', currency: 'STN' },
+  { code: 'TL', name: 'Timor-Leste', currency: 'USD' },
 ] as const;
 
 export const COUNTRY_LOOKUP: Record<string, string> = {
@@ -73,15 +87,81 @@ export const COUNTRY_LOOKUP: Record<string, string> = {
   gb: 'GB',
   canada: 'CA',
   ca: 'CA',
+  portugal: 'PT',
+  pt: 'PT',
+  brazil: 'BR',
+  brasil: 'BR',
+  br: 'BR',
+  angola: 'AO',
+  ao: 'AO',
+  mozambique: 'MZ',
+  mocambique: 'MZ',
+  mz: 'MZ',
+  'cape verde': 'CV',
+  'cabo verde': 'CV',
+  cv: 'CV',
+  'guinea-bissau': 'GW',
+  'guine-bissau': 'GW',
+  gw: 'GW',
+  'sao tome and principe': 'ST',
+  'sao tome e principe': 'ST',
+  st: 'ST',
+  'timor-leste': 'TL',
+  'east timor': 'TL',
+  tl: 'TL',
 };
 
-export const COUNTRY_NAMES = [
-  'India',
-  'United States',
-  'Germany',
-  'United Kingdom',
-  'Canada',
-];
+export const COUNTRY_NAMES = COUNTRIES.map((country) => country.name);
+
+const DEPARTMENT_ALIASES: Record<string, (typeof DEPARTMENTS)[number]> = {
+  engineering: 'Engineering',
+  engenharia: 'Engineering',
+  sales: 'Sales',
+  vendas: 'Sales',
+  people: 'People',
+  pessoas: 'People',
+  finance: 'Finance',
+  financas: 'Finance',
+  operations: 'Operations',
+  operacoes: 'Operations',
+  executive: 'Executive',
+  executivo: 'Executive',
+};
+
+const STATUS_ALIASES: Record<string, (typeof EMPLOYMENT_STATUSES)[number]> = {
+  active: 'Active',
+  ativo: 'Active',
+  'on leave': 'On Leave',
+  'de licenca': 'On Leave',
+  licenca: 'On Leave',
+  terminated: 'Terminated',
+  desligado: 'Terminated',
+  rescindido: 'Terminated',
+};
+
+export function foldLookup(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}+/gu, '');
+}
+
+export function resolveCountryCode(value: string): string | undefined {
+  return COUNTRY_LOOKUP[foldLookup(value)];
+}
+
+export function resolveDepartmentName(
+  value: string,
+): (typeof DEPARTMENTS)[number] | undefined {
+  return DEPARTMENT_ALIASES[foldLookup(value)];
+}
+
+export function resolveStatusName(
+  value: string,
+): (typeof EMPLOYMENT_STATUSES)[number] | undefined {
+  return STATUS_ALIASES[foldLookup(value)];
+}
 
 export const SEED_TIMESTAMP = new Date('2026-01-15T00:00:00.000Z');
 export const SEED_AS_OF = new Date('2026-10-20T00:00:00.000Z');

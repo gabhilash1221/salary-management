@@ -1,8 +1,9 @@
 import {
-  COUNTRY_LOOKUP,
   DEPARTMENTS,
-  EMPLOYMENT_STATUSES,
   foldName,
+  resolveCountryCode,
+  resolveDepartmentName,
+  resolveStatusName,
 } from '../../common/reference-data';
 import { formatIsoDate, parseIsoDate } from '../../common/utils/dates';
 import {
@@ -26,13 +27,6 @@ const EMPLOYEE_ID = /^EMP-\d{6}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAJOR_AMOUNT = /^\d+(\.\d{1,2})?$/;
 
-const DEPARTMENT_BY_KEY = new Map(
-  DEPARTMENTS.map((department) => [department.toLowerCase(), department]),
-);
-const STATUS_BY_KEY = new Map(
-  EMPLOYMENT_STATUSES.map((status) => [status.toLowerCase(), status]),
-);
-
 const SALARY_HEADERS: ImportHeader[] = [
   'annualAmount',
   'currency',
@@ -42,6 +36,15 @@ const SALARY_HEADERS: ImportHeader[] = [
 
 export function formatEmployeeId(sequence: number): string {
   return `EMP-${String(sequence).padStart(6, '0')}`;
+}
+
+export function allocateEmployeeId(
+  existingIds: Iterable<string>,
+): string | null {
+  const reservedIds = new Set(existingIds);
+  return allocateId(reservedIds, {
+    value: nextEmployeeNumber(reservedIds),
+  });
 }
 
 export function nextEmployeeNumber(existingIds: Iterable<string>): number {
@@ -192,18 +195,18 @@ function fieldMessages(
     messages.push('Email must be a valid address');
   }
 
-  const department = DEPARTMENT_BY_KEY.get(values.department.toLowerCase());
+  const department = resolveDepartmentName(values.department);
   if (!department) {
     messages.push(`Department must be one of ${DEPARTMENTS.join(', ')}`);
   }
-  const country = COUNTRY_LOOKUP[values.country.trim().toLowerCase()];
+  const country = resolveCountryCode(values.country);
   if (!country) {
     messages.push('Country must be a supported country code or name');
   }
   if (values.jobTitle === '' || values.jobTitle.length > 80) {
     messages.push('Job title is required and must be 80 characters or fewer');
   }
-  const status = STATUS_BY_KEY.get(values.status.toLowerCase());
+  const status = resolveStatusName(values.status);
   if (!status) {
     messages.push('Status must be Active, On Leave, or Terminated');
   }
@@ -305,9 +308,9 @@ function toDraft(
   employeeId: string,
   maxAmountMinor: number,
 ): EmployeeDraft | null {
-  const department = DEPARTMENT_BY_KEY.get(values.department.toLowerCase());
-  const country = COUNTRY_LOOKUP[values.country.trim().toLowerCase()];
-  const status = STATUS_BY_KEY.get(values.status.toLowerCase());
+  const department = resolveDepartmentName(values.department);
+  const country = resolveCountryCode(values.country);
+  const status = resolveStatusName(values.status);
   const hireDate = readDate(values.hireDate);
   if (!department || !country || !status || !hireDate) return null;
   const terminationDate =

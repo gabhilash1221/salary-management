@@ -6,10 +6,12 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { ErrorState } from '../../components/ErrorState';
 import { controlClass, Field } from '../../components/Field';
+import { useI18n } from '../../i18n/locale-context';
 import { useAuth } from '../auth/auth-context';
 
 export function QuestionsPage() {
   const { session } = useAuth();
+  const { t } = useI18n();
   const [question, setQuestion] = useState(
     'What is the median salary in India by department?',
   );
@@ -38,9 +40,9 @@ export function QuestionsPage() {
 
   return (
     <section className="grid gap-4">
-      <h1 className="text-2xl">Questions</h1>
+      <h1 className="text-2xl">{t('questions.title')}</h1>
       <form className="grid gap-3" onSubmit={onSubmit}>
-        <Field label="Question" htmlFor="question">
+        <Field label={t('questions.question')} htmlFor="question">
           <textarea
             id="question"
             className={controlClass}
@@ -50,7 +52,7 @@ export function QuestionsPage() {
           />
         </Field>
         <Button type="submit" disabled={ask.isPending} className="w-fit">
-          Ask
+          {t('questions.ask')}
         </Button>
       </form>
       {supported.data ? (
@@ -72,7 +74,7 @@ export function QuestionsPage() {
           message={
             ask.error instanceof Error
               ? ask.error.message
-              : 'Could not ask the question'
+              : t('questions.error')
           }
         />
       ) : null}
@@ -93,7 +95,7 @@ export function QuestionsPage() {
         <Card>
           <p>{ask.data.definition}</p>
           <p>
-            {ask.data.rowCount} rows
+            {t('questions.rows', { count: ask.data.rowCount })}
             {ask.data.currency ? ` · ${ask.data.currency}` : ''}
           </p>
           <pre className="overflow-auto text-sm">

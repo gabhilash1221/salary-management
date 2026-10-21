@@ -1,3 +1,11 @@
+export type Profile = {
+  email: string;
+  role: string;
+  displayName: string;
+  theme: 'day' | 'night';
+  hasAvatar: boolean;
+};
+
 export type AuthSession = {
   token: string;
   role: string;

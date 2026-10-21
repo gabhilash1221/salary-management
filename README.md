@@ -1,6 +1,8 @@
 # Salary Management
 
-Central salary directory for HR: search employees, import employees from Excel or CSV, update salary history, review compensation analytics, and ask a closed set of questions. The API calculates every compensation figure and validates every import. The web app displays those results. Day and night mode is available from the header and the sign-in page.
+Central salary directory for HR: search employees, import employees from Excel or CSV, update salary history, review compensation analytics, and ask a closed set of questions. The API calculates every compensation figure and validates every import. The web app displays those results.
+
+The header switches between English and Portuguese, and between day and night. A signed-in theme is saved on that user and pushed to their other open sessions. The language choice stays in this browser. The header avatar opens a profile page for the display name, photo, and password.
 
 ## Prerequisites
 
@@ -42,4 +44,6 @@ Open http://localhost:5173 after `npm run dev`. API docs are at http://localhost
 
 The walkthrough is in [docs/demo-script.md](docs/demo-script.md). Product rules are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md). Architecture and trade-offs are in [docs/architecture.md](docs/architecture.md).
 
-HR managers import employees from the Employees page. Download either template, preview the file, then confirm. Ready rows are created, invalid rows are reported, and duplicates are skipped. The same page can download an error report.
+HR managers use the Employees page to add, edit, and delete people, sort the directory, and open **Bulk Import Employees**. Import stays in a dialog: download either template, preview the file, then confirm. Ready rows are created, invalid rows are reported, and duplicates are skipped. After confirm, a dialog shows how many employees imported and how many failed. Download the Excel feedback file for a result and message on every row.
+
+The country list includes Portugal, Brazil, Angola, Mozambique, Cape Verde, Guinea-Bissau, São Tomé and Príncipe, and Timor-Leste, along with India, the United States, Germany, the United Kingdom, and Canada. A new seed places employees in those countries. People already in a database stay as they are until `npm run seed` is run again.

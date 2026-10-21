@@ -6,11 +6,14 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { ErrorState } from '../../components/ErrorState';
 import { controlClass, Field } from '../../components/Field';
+import { LocaleSwitch } from '../../components/LocaleSwitch';
 import { ThemeToggle } from '../../components/ThemeToggle';
+import { useI18n } from '../../i18n/locale-context';
 import { useAuth } from './auth-context';
 
 export function LoginPage() {
   const { login } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
@@ -33,17 +36,20 @@ export function LoginPage() {
       });
       navigate('/employees');
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Login failed');
+      setError(caught instanceof Error ? caught.message : t('login.failed'));
     }
   }
 
   return (
     <main className="mx-auto mt-10 flex w-full max-w-md flex-col items-end gap-3 px-4 sm:mt-16">
-      <ThemeToggle />
+      <div className="flex items-center gap-2">
+        <LocaleSwitch />
+        <ThemeToggle />
+      </div>
       <Card className="w-full">
-        <h1 className="mb-4 text-2xl">Sign in</h1>
+        <h1 className="mb-4 text-2xl">{t('login.title')}</h1>
         <form className="grid gap-3" onSubmit={onSubmit}>
-          <Field label="Email" htmlFor="email">
+          <Field label={t('common.email')} htmlFor="email">
             <input
               id="email"
               name="email"
@@ -53,7 +59,7 @@ export function LoginPage() {
               required
             />
           </Field>
-          <Field label="Password" htmlFor="password">
+          <Field label={t('login.password')} htmlFor="password">
             <input
               id="password"
               name="password"
@@ -64,7 +70,7 @@ export function LoginPage() {
             />
           </Field>
           {error ? <ErrorState message={error} /> : null}
-          <Button type="submit">Sign in</Button>
+          <Button type="submit">{t('login.submit')}</Button>
         </form>
       </Card>
     </main>

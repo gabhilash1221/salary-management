@@ -9,11 +9,11 @@ describe('LoginPage', () => {
   it('labels the email and password fields', () => {
     render(
       <MemoryRouter>
-        <ThemeProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <ThemeProvider>
             <LoginPage />
-          </AuthProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </MemoryRouter>,
     );
     expect(screen.getByLabelText('Email')).toBeInTheDocument();

@@ -21,7 +21,9 @@ export function assertCurrency(
   currency: string,
 ): asserts currency is SupportedCurrency {
   if (!SUPPORTED_CURRENCIES.includes(currency as SupportedCurrency)) {
-    throw new DomainError('Currency must be one of INR, USD, EUR, GBP, or CAD');
+    throw new DomainError(
+      `Currency must be one of ${SUPPORTED_CURRENCIES.join(', ')}`,
+    );
   }
 }
 

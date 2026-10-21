@@ -6,6 +6,8 @@ import { Card } from '../../components/Card';
 import { DataTable } from '../../components/DataTable';
 import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
+import { countryLabel, departmentLabel, statusLabel } from '../../i18n/catalog';
+import { useI18n } from '../../i18n/locale-context';
 import { formatMoney } from '../../lib/formatMoney';
 import { earliestSalaryDate } from '../../lib/nextIsoDate';
 import { useAuth } from '../auth/auth-context';
@@ -16,6 +18,7 @@ const HISTORY_ROLES = new Set(['HR_MANAGER', 'HR_VIEWER', 'AUDITOR']);
 export function EmployeeDetailPage() {
   const { employeeId = '' } = useParams();
   const { session } = useAuth();
+  const { locale, t } = useI18n();
   const queryClient = useQueryClient();
   const canReadHistory = HISTORY_ROLES.has(session?.role ?? '');
   const canUpdate = session?.role === 'HR_MANAGER';
@@ -71,7 +74,7 @@ export function EmployeeDetailPage() {
         message={
           employee.error instanceof Error
             ? employee.error.message
-            : 'Employee not found'
+            : t('detail.notFound')
         }
       />
     );
@@ -82,48 +85,58 @@ export function EmployeeDetailPage() {
   return (
     <section className="grid gap-4">
       <p>
-        <Link to="/employees">Back to directory</Link>
+        <Link to="/employees">{t('detail.back')}</Link>
       </p>
       <h1 className="text-2xl">
         {employee.data.firstName} {employee.data.lastName}
       </h1>
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div>
-          <dt className="text-sm text-muted">ID</dt>
+          <dt className="text-sm text-muted">{t('employees.id')}</dt>
           <dd>{employee.data.employeeId}</dd>
         </div>
         <div>
-          <dt className="text-sm text-muted">Department</dt>
-          <dd>{employee.data.department}</dd>
+          <dt className="text-sm text-muted">{t('employees.department')}</dt>
+          <dd>{departmentLabel(locale, employee.data.department)}</dd>
         </div>
         <div>
-          <dt className="text-sm text-muted">Country</dt>
-          <dd>{employee.data.country}</dd>
+          <dt className="text-sm text-muted">{t('employees.country')}</dt>
+          <dd>{countryLabel(locale, employee.data.country)}</dd>
         </div>
         <div>
-          <dt className="text-sm text-muted">Status</dt>
-          <dd>{employee.data.status}</dd>
+          <dt className="text-sm text-muted">{t('employees.status')}</dt>
+          <dd>{statusLabel(locale, employee.data.status)}</dd>
         </div>
         {current ? (
           <div className="col-span-2">
-            <dt className="text-sm text-muted">Current salary</dt>
+            <dt className="text-sm text-muted">
+              {t('employees.currentSalary')}
+            </dt>
             <dd>
-              {formatMoney(current.amountMinor, current.currency)} from{' '}
-              {current.effectiveDate}
+              {t('detail.salaryFrom', {
+                amount: formatMoney(
+                  current.amountMinor,
+                  current.currency,
+                  locale,
+                ),
+                date: current.effectiveDate,
+              })}
             </dd>
           </div>
         ) : null}
       </dl>
       {canUpdate ? (
         <Card>
-          <h2 className="mb-3 text-lg">Update salary</h2>
+          <h2 className="mb-3 text-lg">{t('salary.update')}</h2>
           {update.isSuccess ? (
             <p className="mb-3 text-sm text-brand" role="status">
-              Salary updated for {update.variables?.effectiveDate}.
+              {t('detail.updated', {
+                date: update.variables?.effectiveDate ?? '',
+              })}
             </p>
           ) : null}
           {history.isLoading ? (
-            <LoadingState message="Loading salary history…" />
+            <LoadingState message={t('detail.historyLoading')} />
           ) : (
             <SalaryForm
               key={`${current?.currency ?? 'USD'}-${earliestSalaryDate(
@@ -149,30 +162,31 @@ export function EmployeeDetailPage() {
       ) : null}
       {canReadHistory ? (
         <DataTable
-          caption="Salary history"
-          emptyMessage="No salary history"
+          caption={t('detail.historyCaption')}
+          emptyMessage={t('detail.historyEmpty')}
           rows={(history.data?.records ?? []).map((record) => ({ ...record }))}
           columns={[
             {
               key: 'date',
-              header: 'Effective date',
+              header: t('detail.effectiveDate'),
               render: (row) => row.effectiveDate,
             },
             {
               key: 'amount',
-              header: 'Amount',
-              render: (row) => formatMoney(row.amountMinor, row.currency),
+              header: t('detail.amount'),
+              render: (row) =>
+                formatMoney(row.amountMinor, row.currency, locale),
             },
             {
               key: 'reason',
-              header: 'Reason',
+              header: t('salary.reason'),
               render: (row) => row.reason ?? '—',
             },
           ]}
         />
       ) : null}
       {history.isError ? (
-        <ErrorState message="Could not load salary history" />
+        <ErrorState message={t('detail.historyError')} />
       ) : null}
     </section>
   );

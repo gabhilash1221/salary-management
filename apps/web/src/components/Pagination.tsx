@@ -1,4 +1,5 @@
 import { PAGE_SIZE_OPTIONS } from '../hooks/usePaginationState';
+import { useI18n } from '../i18n/locale-context';
 import { controlClass } from './Field';
 import { pageWindow } from './page-window';
 
@@ -18,19 +19,20 @@ export function Pagination({
   onPageChange: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
 }) {
+  const { t } = useI18n();
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const items = pageWindow(page, pageCount);
 
   return (
     <nav
       className="my-3 flex w-full flex-col items-end gap-3 sm:flex-row sm:flex-wrap sm:justify-end"
-      aria-label="Pagination"
+      aria-label={t('pagination.label')}
     >
       <div className="flex flex-wrap items-center gap-1.5">
         <button
           type="button"
           className={pageButtonClass}
-          aria-label="Previous page"
+          aria-label={t('pagination.previous')}
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
@@ -50,7 +52,7 @@ export function Pagination({
               key={item}
               type="button"
               className={pageButtonClass}
-              aria-label={`Page ${item}`}
+              aria-label={t('pagination.page', { page: item })}
               aria-current={item === page ? 'page' : undefined}
               onClick={() => onPageChange(item)}
             >
@@ -61,7 +63,7 @@ export function Pagination({
         <button
           type="button"
           className={pageButtonClass}
-          aria-label="Next page"
+          aria-label={t('pagination.next')}
           disabled={page >= pageCount}
           onClick={() => onPageChange(page + 1)}
         >
@@ -70,10 +72,10 @@ export function Pagination({
       </div>
       {onPageSizeChange ? (
         <label className="flex w-fit flex-row items-center gap-2 text-sm text-muted">
-          Per page
+          {t('pagination.perPage')}
           <select
             className={`${controlClass} h-8 w-auto`}
-            aria-label="Rows per page"
+            aria-label={t('pagination.rows')}
             value={pageSize}
             onChange={(event) => onPageSizeChange(Number(event.target.value))}
           >

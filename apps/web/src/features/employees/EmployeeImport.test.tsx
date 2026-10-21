@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ImportReport } from '../../api/types';
 import { EmployeeImport } from './EmployeeImport';
@@ -196,8 +202,12 @@ describe('EmployeeImport', () => {
     expect(xml).toContain('Imported successfully');
     expect(xml).toContain('Email must be a valid address');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(screen.queryByRole('dialog')).toBeNull();
+    const result = screen.getByRole('dialog', { name: 'Import complete' });
+    fireEvent.click(within(result).getByRole('button', { name: 'Close' }));
+    expect(
+      screen.queryByRole('dialog', { name: 'Import complete' }),
+    ).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Bulk import' })).toBeTruthy();
     expect(
       screen.getByRole('button', { name: 'Download feedback (.xlsx)' }),
     ).toBeTruthy();

@@ -46,6 +46,7 @@ async function main() {
       email: user.email,
       passwordHash,
       role: user.role,
+      displayName: user.displayName,
       isActive: true,
       createdAt: SEED_TIMESTAMP,
     })),

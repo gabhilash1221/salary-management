@@ -19,6 +19,11 @@
         }
         if (night) document.documentElement.classList.add("dark");
         document.documentElement.style.colorScheme = night ? "dark" : "light";
+        const locale = localStorage.getItem("salary-locale");
+        if (locale === "pt") {
+          document.documentElement.lang = "pt";
+          document.title = "Gestão de salários";
+        }
       })();
     </script>
   </head>

@@ -5,6 +5,7 @@ import { useAuth } from '../features/auth/auth-context';
 import { LoginPage } from '../features/auth/LoginPage';
 import { EmployeeDetailPage } from '../features/employees/EmployeeDetailPage';
 import { EmployeeListPage } from '../features/employees/EmployeeListPage';
+import { ProfilePage } from '../features/profile/ProfilePage';
 import { QuestionsPage } from '../features/questions/QuestionsPage';
 import { AppLayout } from './layout/AppLayout';
 
@@ -20,6 +21,7 @@ export function AppRouter() {
       <Route path="/login" element={<LoginPage />} />
       <Route element={<RequireAuth />}>
         <Route path="/" element={<Navigate to="/employees" replace />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/employees" element={<EmployeeListPage />} />
         <Route path="/employees/:employeeId" element={<EmployeeDetailPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />

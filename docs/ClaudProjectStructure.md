@@ -3,7 +3,7 @@ salary-management/
 ├── README.md                     # setup, seed, run, test, demo steps
 ├── .env.example                  # JWT_EXPIRES_IN=1d for the demo; code default is 15m
 ├── docs/
-│   ├── REQUIREMENTS.md           # product rules, including bulk import (FR-6)
+│   ├── REQUIREMENTS.md           # product rules, including import, profile, and language
 │   ├── architecture.md           # decisions, trade-offs, limitations
 │   ├── demo-script.md
 │   ├── ProjectStructure.md
@@ -22,7 +22,7 @@ salary-management/
 │   │   │       ├── generators.spec.ts
 │   │   │       └── reference-data.ts  # countries, currencies, departments, titles
 │   │   ├── src/
-│   │   │   ├── main.ts                # bootstrap: validation pipe, Swagger, CORS, helmet
+│   │   │   ├── main.ts                # bootstrap: validation pipe, Swagger, CORS, helmet, WebSocket adapter
 │   │   │   ├── app.module.ts
 │   │   │   ├── configure-app.ts
 │   │   │   ├── config/                # typed env config + validation
@@ -34,8 +34,8 @@ salary-management/
 │   │   │   │   └── utils/             # money (minor units), dates, pagination
 │   │   │   ├── prisma/                # PrismaModule + PrismaService
 │   │   │   └── modules/
-│   │   │       ├── auth/              # login, JWT strategy, password hashing, rate limit
-│   │   │       ├── employees/         # list and detail
+│   │   │       ├── auth/              # login, profile, theme socket, password, avatar
+│   │   │       ├── employees/         # list, create, update, delete, and detail
 │   │   │       │   ├── employee-import.controller.ts   # templates, preview, confirm
 │   │   │       │   ├── employee-import.service.ts      # one transaction for ready rows
 │   │   │       │   ├── employee-import.parse.ts        # CSV parser and ExcelJS
@@ -63,15 +63,17 @@ salary-management/
 │           ├── index.css              # theme tokens, including night mode
 │           ├── app/
 │           │   ├── router.tsx
-│           │   ├── providers.tsx      # theme, QueryClient, auth
-│           │   ├── theme-context.tsx
-│           │   └── layout/            # header nav, day/night, sign out
+│           │   ├── providers.tsx      # QueryClient, auth, locale, theme
+│           │   ├── theme-context.tsx  # day/night, including the signed-in socket
+│           │   └── layout/            # header nav, language, day/night, profile, sign out
+│           ├── i18n/                  # English and Portuguese catalogs
 │           ├── api/                   # JSON client plus multipart upload and download
 │           ├── features/
 │           │   ├── auth/
-│           │   ├── employees/         # list, filters, pagination, bulk import
+│           │   ├── employees/         # list, filters, sort, edit, bulk import
+│           │   ├── profile/           # display name, photo, password
 │           │   ├── salary/            # update form, next valid effective date
-│           │   ├── analytics/         # summary, currency filter, charts
+│           │   ├── analytics/         # summary, skeleton, currency filter, charts
 │           │   ├── questions/
 │           │   └── audit/
 │           ├── components/            # Button, Field, Card, DataTable, BarChart, states

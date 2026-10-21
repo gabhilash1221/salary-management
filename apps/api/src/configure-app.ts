@@ -1,9 +1,11 @@
 import { type INestApplication, ValidationPipe } from '@nestjs/common';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { requestIdMiddleware } from './common/interceptors/request-id.middleware';
 
 export function configureApp(app: INestApplication) {
+  app.useWebSocketAdapter(new WsAdapter(app));
   app.setGlobalPrefix('api/v1');
   app.use(requestIdMiddleware);
   app.use(helmet({ contentSecurityPolicy: false }));

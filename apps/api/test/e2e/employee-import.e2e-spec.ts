@@ -346,6 +346,131 @@ describe('employee bulk import', () => {
     await prisma.employee.deleteMany({ where: { employeeId } });
   });
 
+  it('creates, sorts, updates, and deletes an employee', async () => {
+    const viewerDenied = await request(app.getHttpServer())
+      .post('/api/v1/employees')
+      .set('Authorization', `Bearer ${viewer}`)
+      .send(profile('EMP-900501', 'alpha.sortkey@example.test', 'Alpha'));
+    expect(viewerDenied.status).toBe(403);
+
+    const invalid = await request(app.getHttpServer())
+      .post('/api/v1/employees')
+      .set('Authorization', `Bearer ${manager}`)
+      .send({
+        ...profile('EMP-900509', 'bad.sortkey@example.test', 'Bad'),
+        department: 'Nope',
+      });
+    expect(invalid.status).toBe(400);
+
+    const first = await request(app.getHttpServer())
+      .post('/api/v1/employees')
+      .set('Authorization', `Bearer ${manager}`)
+      .send(profile('EMP-900501', 'alpha.sortkey@example.test', 'Alpha'));
+    expect(first.status).toBe(201);
+    expect(first.body).toMatchObject({
+      employeeId: 'EMP-900501',
+      department: 'Engineering',
+      version: 1,
+      currentSalary: null,
+    });
+
+    const second = await request(app.getHttpServer())
+      .post('/api/v1/employees')
+      .set('Authorization', `Bearer ${manager}`)
+      .send(profile('EMP-900502', 'zulu.sortkey@example.test', 'Zulu'));
+    expect(second.status).toBe(201);
+
+    const duplicate = await request(app.getHttpServer())
+      .post('/api/v1/employees')
+      .set('Authorization', `Bearer ${manager}`)
+      .send(profile('EMP-900503', 'alpha.sortkey@example.test', 'Copy'));
+    expect(duplicate.status).toBe(409);
+
+    const byName = await request(app.getHttpServer())
+      .get('/api/v1/employees?search=sortkey&sort=name&order=asc')
+      .set('Authorization', `Bearer ${manager}`);
+    expect(byName.status).toBe(200);
+    expect(
+      byName.body.items.map((item: { firstName: string }) => item.firstName),
+    ).toEqual(['Alpha', 'Zulu']);
+
+    const higher = await request(app.getHttpServer())
+      .put('/api/v1/employees/EMP-900501/salary')
+      .set('Authorization', `Bearer ${manager}`)
+      .send({
+        amountMinor: 200_000,
+        currency: 'GBP',
+        effectiveDate: '2024-01-15',
+        version: 1,
+        reason: 'Hire',
+      });
+    expect(higher.status).toBe(200);
+    const lower = await request(app.getHttpServer())
+      .put('/api/v1/employees/EMP-900502/salary')
+      .set('Authorization', `Bearer ${manager}`)
+      .send({
+        amountMinor: 100_000,
+        currency: 'GBP',
+        effectiveDate: '2024-01-15',
+        version: 1,
+        reason: 'Hire',
+      });
+    expect(lower.status).toBe(200);
+
+    const bySalary = await request(app.getHttpServer())
+      .get('/api/v1/employees?search=sortkey&sort=salary&order=asc')
+      .set('Authorization', `Bearer ${manager}`);
+    expect(
+      bySalary.body.items.map(
+        (item: { employeeId: string }) => item.employeeId,
+      ),
+    ).toEqual(['EMP-900502', 'EMP-900501']);
+
+    const updated = await request(app.getHttpServer())
+      .patch('/api/v1/employees/EMP-900501')
+      .set('Authorization', `Bearer ${manager}`)
+      .send({
+        ...profile('EMP-900501', 'alpha.sortkey@example.test', 'Alpha'),
+        department: 'Sales',
+        version: 2,
+      });
+    expect(updated.status).toBe(200);
+    expect(updated.body.department).toBe('Sales');
+    expect(updated.body.version).toBe(3);
+
+    const removed = await request(app.getHttpServer())
+      .delete('/api/v1/employees/EMP-900501')
+      .set('Authorization', `Bearer ${manager}`)
+      .send({ version: 3 });
+    expect(removed.status).toBe(200);
+    expect(
+      await prisma.employee.findUnique({ where: { employeeId: 'EMP-900501' } }),
+    ).toBeNull();
+    expect(
+      await prisma.salaryRecord.count({ where: { employeeId: 'EMP-900501' } }),
+    ).toBe(0);
+    expect(
+      await prisma.auditLog.findFirst({
+        where: { entityId: 'EMP-900501', action: 'EMPLOYEE_DELETE' },
+      }),
+    ).not.toBeNull();
+  });
+
+  function profile(employeeId: string, email: string, firstName: string) {
+    return {
+      employeeId,
+      firstName,
+      lastName: 'Sortkey',
+      email,
+      department: 'Engineering',
+      country: 'GB',
+      jobTitle: 'Engineer',
+      status: 'Active',
+      hireDate: '2024-01-15',
+      terminationDate: null,
+    };
+  }
+
   async function login(email: string): Promise<string> {
     const response = await request(app.getHttpServer())
       .post('/api/v1/auth/login')

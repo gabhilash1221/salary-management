@@ -19,7 +19,7 @@ export function feedbackWorkbook(rows: ImportRow[]): Blob {
     ['xl/_rels/workbook.xml.rels', text(workbookRels)],
     ['xl/worksheets/sheet1.xml', text(sheetXml(rows))],
   ]);
-  return new Blob([zipStore(files)], {
+  return new Blob([zipStore(files).slice()], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
 }
