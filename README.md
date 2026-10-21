@@ -42,7 +42,7 @@ The seed creates one user for each role. The password is `Password123!` unless `
 
 Open http://localhost:5173 after `npm run dev`. API docs are at http://localhost:3000/api/docs.
 
-The walkthrough is in [docs/demo-script.md](docs/demo-script.md). Product rules are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md). Architecture and trade-offs are in [docs/architecture.md](docs/architecture.md).
+The walkthrough is in [docs/demo-script.md](docs/demo-script.md). Product rules are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md). Architecture and trade-offs are in [docs/architecture.md](docs/architecture.md). The layout of the code is in [docs/ProjectStructure.md](docs/ProjectStructure.md).
 
 HR managers use the Employees page to add, edit, and delete people, sort the directory, and open **Bulk Import Employees**. Import stays in a dialog: download either template, preview the file, then confirm. Ready rows are created, invalid rows are reported, and duplicates are skipped. After confirm, a dialog shows how many employees imported and how many failed. Download the Excel feedback file for a result and message on every row.
 
