@@ -1,6 +1,6 @@
 # Salary Management
 
-Central salary directory for HR: search employees, update salary history, review compensation analytics, and ask a closed set of questions. The API calculates every compensation figure. The web app displays those results.
+Central salary directory for HR: search employees, import employees from Excel or CSV, update salary history, review compensation analytics, and ask a closed set of questions. The API calculates every compensation figure and validates every import. The web app displays those results. Day and night mode is available from the header and the sign-in page.
 
 ## Prerequisites
 
@@ -40,4 +40,6 @@ The seed creates one user for each role. The password is `Password123!` unless `
 
 Open http://localhost:5173 after `npm run dev`. API docs are at http://localhost:3000/api/docs.
 
-The walkthrough is in [docs/demo-script.md](docs/demo-script.md). Architecture choices are in [docs/architecture.md](docs/architecture.md).
+The walkthrough is in [docs/demo-script.md](docs/demo-script.md). Product rules are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md). Architecture and trade-offs are in [docs/architecture.md](docs/architecture.md).
+
+HR managers import employees from the Employees page. Download either template, preview the file, then confirm. Ready rows are created, invalid rows are reported, and duplicates are skipped. The same page can download an error report.

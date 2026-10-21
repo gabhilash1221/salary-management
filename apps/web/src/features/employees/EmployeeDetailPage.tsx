@@ -7,6 +7,7 @@ import { DataTable } from '../../components/DataTable';
 import { ErrorState } from '../../components/ErrorState';
 import { LoadingState } from '../../components/LoadingState';
 import { formatMoney } from '../../lib/formatMoney';
+import { earliestSalaryDate } from '../../lib/nextIsoDate';
 import { useAuth } from '../auth/auth-context';
 import { SalaryForm } from '../salary/SalaryForm';
 
@@ -116,15 +117,34 @@ export function EmployeeDetailPage() {
       {canUpdate ? (
         <Card>
           <h2 className="mb-3 text-lg">Update salary</h2>
-          <SalaryForm
-            pending={update.isPending}
-            error={
-              update.isError && update.error instanceof Error
-                ? update.error.message
-                : null
-            }
-            onSubmit={(input) => update.mutate(input)}
-          />
+          {update.isSuccess ? (
+            <p className="mb-3 text-sm text-brand" role="status">
+              Salary updated for {update.variables?.effectiveDate}.
+            </p>
+          ) : null}
+          {history.isLoading ? (
+            <LoadingState message="Loading salary history…" />
+          ) : (
+            <SalaryForm
+              key={`${current?.currency ?? 'USD'}-${earliestSalaryDate(
+                employee.data.hireDate,
+                history.data?.records[0]?.effectiveDate ?? null,
+              )}`}
+              pending={update.isPending}
+              error={
+                update.isError && update.error instanceof Error
+                  ? update.error.message
+                  : null
+              }
+              defaultCurrency={current?.currency ?? 'USD'}
+              latestSalaryDate={history.data?.records[0]?.effectiveDate ?? null}
+              earliestDate={earliestSalaryDate(
+                employee.data.hireDate,
+                history.data?.records[0]?.effectiveDate ?? null,
+              )}
+              onSubmit={(input) => update.mutate(input)}
+            />
+          )}
         </Card>
       ) : null}
       {canReadHistory ? (

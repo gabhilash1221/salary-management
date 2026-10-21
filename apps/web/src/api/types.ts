@@ -41,6 +41,28 @@ export type EmployeePage = {
   pageSize: number;
 };
 
+export type ImportRowStatus = 'ready' | 'failed' | 'skipped' | 'imported';
+
+export type ImportRow = {
+  row: number;
+  status: ImportRowStatus;
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  department: string;
+  messages: string[];
+};
+
+export type ImportReport = {
+  total: number;
+  valid: number;
+  failed: number;
+  skipped: number;
+  imported: number;
+  rows: ImportRow[];
+};
+
 export type SummaryRow = {
   currency: string;
   department?: string;
@@ -52,6 +74,13 @@ export type SummaryRow = {
   max?: number;
   average?: number;
   median?: number;
+};
+
+export type DistributionRow = {
+  currency: string;
+  minMinor: number;
+  maxMinor: number;
+  count: number;
 };
 
 export type QuestionResponse =

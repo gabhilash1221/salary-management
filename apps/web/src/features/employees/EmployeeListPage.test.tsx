@@ -53,6 +53,7 @@ describe('EmployeeListPage search', () => {
 
   afterEach(() => {
     cleanup();
+    sessionStorage.clear();
     vi.useRealTimers();
     vi.unstubAllGlobals();
   });
@@ -100,5 +101,26 @@ describe('EmployeeListPage search', () => {
           String(url).includes('department=Engineering'),
         ),
     ).toBe(true);
+    expect(
+      screen.queryByRole('button', { name: 'Bulk Import Employees' }),
+    ).toBeNull();
+  });
+
+  it('offers bulk import to an HR manager', async () => {
+    sessionStorage.setItem(
+      'salary-auth',
+      JSON.stringify({
+        token: 'token',
+        role: 'HR_MANAGER',
+        email: 'hr.manager@acme.test',
+      }),
+    );
+    renderPage();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(
+      screen.getByRole('button', { name: 'Bulk Import Employees' }),
+    ).toBeTruthy();
   });
 });

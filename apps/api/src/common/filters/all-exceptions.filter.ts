@@ -16,15 +16,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request & { requestId?: string }>();
-    const status =
-      exception instanceof HttpException
+    const tooLarge = isUploadTooLarge(exception);
+    const status = tooLarge
+      ? HttpStatus.BAD_REQUEST
+      : exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
     const body =
       exception instanceof HttpException ? exception.getResponse() : null;
 
-    let message = 'Internal server error';
-    let error = 'Internal Server Error';
+    let message = tooLarge
+      ? 'File exceeds the 2 MB limit'
+      : 'Internal server error';
+    let error = tooLarge ? 'Bad Request' : 'Internal Server Error';
     let details: string[] = [];
 
     if (typeof body === 'string') {
@@ -42,10 +46,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     }
 
-    if (!(exception instanceof HttpException)) {
+    if (!(exception instanceof HttpException) && !tooLarge) {
       this.logger.error(
         exception instanceof Error ? exception.stack : String(exception),
       );
+    }
+
+    if (tooLarge) {
+      message = 'File exceeds the 2 MB limit';
+      error = 'Bad Request';
+      details = [];
     }
 
     response.status(status).json({
@@ -56,4 +66,30 @@ export class AllExceptionsFilter implements ExceptionFilter {
       requestId: request.requestId ?? null,
     });
   }
+}
+
+function isUploadTooLarge(exception: unknown): boolean {
+  if (exception instanceof HttpException) {
+    return (
+      exception.getStatus() === HttpStatus.PAYLOAD_TOO_LARGE &&
+      /too large/i.test(exceptionMessage(exception))
+    );
+  }
+  if (typeof exception !== 'object' || exception === null) return false;
+  const error = exception as { name?: string; code?: string; message?: string };
+  return (
+    error.code === 'LIMIT_FILE_SIZE' ||
+    (error.name === 'MulterError' && /too large/i.test(error.message ?? ''))
+  );
+}
+
+function exceptionMessage(exception: HttpException): string {
+  const body = exception.getResponse();
+  if (typeof body === 'string') return body;
+  if (body && typeof body === 'object' && 'message' in body) {
+    const message = (body as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+    if (Array.isArray(message)) return message.join(' ');
+  }
+  return exception.message;
 }

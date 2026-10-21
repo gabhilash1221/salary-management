@@ -23,7 +23,7 @@ export function Pagination({
 
   return (
     <nav
-      className="my-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+      className="my-3 flex w-full flex-col items-end gap-3 sm:flex-row sm:flex-wrap sm:justify-end"
       aria-label="Pagination"
     >
       <div className="flex flex-wrap items-center gap-1.5">

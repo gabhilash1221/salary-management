@@ -1,35 +1,44 @@
-acme-salary-management/
+salary-management/
 ├── apps/
-│   ├── api/                     # NestJS
+│   ├── api/                         # NestJS, Prisma, SQLite
 │   │   ├── src/
-│   │   │   ├── employees/
-│   │   │   ├── salaries/
-│   │   │   ├── analytics/
-│   │   │   ├── audit/
-│   │   │   ├── auth/
-│   │   │   └── common/
+│   │   │   ├── modules/
+│   │   │   │   ├── auth/
+│   │   │   │   ├── employees/       # directory, plus Excel/CSV import
+│   │   │   │   ├── salary/
+│   │   │   │   ├── analytics/
+│   │   │   │   ├── questions/
+│   │   │   │   ├── audit/
+│   │   │   │   └── health/
+│   │   │   ├── common/              # guards, filters, money, dates
+│   │   │   ├── config/
+│   │   │   └── prisma/
 │   │   ├── prisma/
 │   │   │   ├── schema.prisma
-│   │   │   ├── migrations/
-│   │   │   └── seed.ts
-│   │   └── test/
-│   └── web/                     # React + Vite
+│   │   │   └── seed/                # 10,000 employees from seed 42
+│   │   └── test/                    # unit specs and supertest e2e
+│   └── web/                         # React, Vite, Tailwind
 │       └── src/
-│           ├── components/
+│           ├── app/                 # router, providers, day/night theme
+│           ├── api/
+│           ├── components/          # Button, DataTable, charts, states
 │           ├── features/
-│           │   ├── employees/
-│           │   ├── salaries/
-│           │   └── analytics/
-│           ├── lib/
-│           └── test/
+│           │   ├── auth/
+│           │   ├── employees/       # directory and bulk import
+│           │   ├── salary/
+│           │   ├── analytics/
+│           │   ├── questions/
+│           │   └── audit/
+│           ├── hooks/
+│           └── lib/
 ├── docs/
 │   ├── REQUIREMENTS.md
-│   ├── ARCHITECTURE.md
-│   ├── DATA_MODEL.md
-│   ├── AI_WORKFLOW.md
-│   └── TRADEOFFS.md
+│   ├── architecture.md              # decisions, trade-offs, limitations
+│   ├── demo-script.md
+│   ├── ProjectStructure.md
+│   └── ClaudProjectStructure.md
 ├── .github/workflows/ci.yml
 ├── biome.json
 ├── package.json
 ├── README.md
-└── .gitignore
+└── .env.example

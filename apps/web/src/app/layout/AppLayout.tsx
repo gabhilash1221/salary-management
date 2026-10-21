@@ -3,7 +3,12 @@ import { ThemeToggle } from '../../components/ThemeToggle';
 import { useAuth } from '../../features/auth/auth-context';
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
-  `text-white no-underline ${isActive ? 'underline' : ''}`;
+  [
+    'rounded-md px-2.5 py-1 text-sm font-medium no-underline',
+    isActive
+      ? 'bg-brand !text-white hover:bg-brand dark:bg-white dark:!text-topbar'
+      : '!text-ink hover:bg-canvas dark:!text-white dark:hover:bg-white/10',
+  ].join(' ');
 
 export function AppLayout() {
   const { session, logout } = useAuth();
@@ -13,7 +18,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen">
-      <header className="flex flex-col gap-3 bg-topbar px-4 py-3 text-white sm:flex-row sm:items-center sm:justify-between sm:px-5">
+      <header className="flex flex-col gap-3 border-b border-line bg-surface px-4 py-3 text-ink sm:flex-row sm:items-center sm:justify-between sm:px-5 dark:border-transparent dark:bg-topbar dark:text-white">
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <NavLink to="/employees" className={navClass}>
             Employees
@@ -39,7 +44,7 @@ export function AppLayout() {
           <ThemeToggle variant="topbar" />
           <button
             type="button"
-            className="cursor-pointer rounded-md bg-white px-3 py-1.5 text-sm text-topbar"
+            className="cursor-pointer rounded-md border border-line bg-canvas px-3 py-1.5 text-sm text-ink dark:border-transparent dark:bg-white dark:text-topbar"
             onClick={logout}
           >
             Sign out

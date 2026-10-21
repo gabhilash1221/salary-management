@@ -10,7 +10,7 @@ Replace spreadsheet-based salary management for 10,000 employees across multiple
 
 | Role | Description | Permissions |
 | --- | --- | --- |
-| HR Manager (primary) | Finds employees, updates salaries, analyses compensation | Read/write salary, view analytics, ask questions, view audit trail |
+| HR Manager (primary) | Finds employees, imports employees, updates salaries, analyses compensation | Read/write salary, bulk-import employees, view analytics, ask questions, view audit trail |
 | HR Viewer | Read-only HR staff | Read salary, analytics and Q\&A; no updates |
 | Directory User | Non-compensation staff | Employee directory only; no salary fields anywhere (including analytics and Q&A) |
 | Auditor | Compliance reviewer | Read-only audit trail and salary history |
@@ -22,16 +22,17 @@ Authentication for the initial release uses seeded demo users with hashed passwo
 ### In scope
 
 1. Employee directory with search, filters and server-side pagination.
-2. Salary management with preserved history and audit trail.
-3. Compensation analytics computed by the backend.
-4. Constrained natural-language question answering.
-5. Role-based access control, input validation and audit logging.
-6. Reproducible seed script for exactly 10,000 synthetic employees.
-7. Automated tests, API documentation and documented deployment steps.
+2. Bulk employee import from Excel (`.xlsx`) and CSV, with templates, preview, partial results, and an error report.
+3. Salary management with preserved history and audit trail.
+4. Compensation analytics computed by the backend.
+5. Constrained natural-language question answering.
+6. Role-based access control, input validation and audit logging.
+7. Reproducible seed script for exactly 10,000 synthetic employees.
+8. Automated tests, API documentation and documented deployment steps.
 
 ### Out of scope for the initial release
 
-Bulk imports, approval workflows, multi-level compensation reviews and predictive salary recommendations (see Roadmap).
+Approval workflows, multi-level compensation reviews and predictive salary recommendations (see Roadmap).
 
 ## 4. Functional Requirements
 
@@ -71,13 +72,24 @@ Bulk imports, approval workflows, multi-level compensation reviews and predictiv
 
 - Audit entries are append-only and have no update or delete API.
 - Authorized roles can view and filter the audit trail by employee, actor, action and date range, with pagination.
+- Salary updates write `SALARY_UPDATE`. A bulk import writes `EMPLOYEE_IMPORT` for each created employee and `SALARY_UPDATE` when that row includes a hire salary.
+
+### FR-6 Bulk employee import
+
+- HR Manager can download an Excel template and a CSV template from the employee directory. Both use the same headers and sample rows.
+- HR Manager can upload `.xlsx` or `.csv`. The API checks file type, a 2 MB size limit, required columns, field formats, mandatory values, and duplicates.
+- Preview validates the file and writes nothing. Confirm uploads the same file again; the server parses it again and does not trust a client-supplied row list.
+- Invalid rows are highlighted with messages. Duplicate employee IDs or emails, in the file or already stored, are skipped and are not created.
+- Valid rows are created as new employees. A hire salary uses the same amount, currency, effective-date, and audit rules as a salary update. A blank employee ID receives the next `EMP-######`. Salary columns are optional; if any salary field is set, annual amount and currency are required, and a blank effective date uses the hire date.
+- The result reports records processed, imported, failed, and skipped. After confirm, a dialog shows how many employees imported and how many failed. The browser can download an Excel feedback file with every row, an import result, and a feedback message.
+- Other roles cannot call the import endpoints.
 
 ## 5. Domain Rules
 
 | Rule | Definition |
 | --- | --- |
 | Money representation | Amounts stored as integers in minor units (e.g. cents, paise) with an ISO 4217 currency code. No floating point. |
-| Valid amount | Greater than zero, within a configurable maximum per currency. |
+| Valid amount | Greater than zero, within the configured maximum. SQLite stores the value as a 32-bit integer, so the stored cap is also `2,147,483,647` minor units. |
 | Currency | Must be a supported ISO 4217 code. Each employee has one active currency at a time; a currency change creates a normal history record and is audited. |
 | Effective date | Not earlier than the employee's hire date. Must be later than the effective date of the latest existing record unless an explicit backdating rule is enabled. Future-dated changes are allowed. |
 | Current salary | The record with the latest effective date that is on or before today. Future-dated records do not count until their date arrives. |
@@ -97,7 +109,7 @@ id, employeeId (FK), amountMinor (integer), currency (ISO 4217), effectiveDate, 
 
 ### AuditLog (append-only)
 
-id, timestamp, actorUserId, actorRole, action (e.g. SALARY\_UPDATE, LOGIN, EXPORT), entityType, entityId, oldValue (JSON), newValue (JSON), reason, requestId.
+id, timestamp, actorUserId, actorRole, action (e.g. SALARY\_UPDATE, EMPLOYEE\_IMPORT), entityType, entityId, oldValue (JSON), newValue (JSON), reason, requestId.
 
 ### User
 
@@ -116,6 +128,10 @@ All endpoints are under `/api/v1`, require a bearer token (except login), valida
 | POST | /auth/login | Obtain access token | Public |
 | GET | /employees | Search, filter, sort, paginate | All |
 | GET | /employees/:id | Employee detail (salary fields by role) | All |
+| GET | /employees/import/templates/employees.csv | CSV import template | HR Manager |
+| GET | /employees/import/templates/employees.xlsx | Excel import template | HR Manager |
+| POST | /employees/import/preview | Validate an upload and return a row report | HR Manager |
+| POST | /employees/import | Import the ready rows from an upload | HR Manager |
 | GET | /employees/:id/salary | Current salary | HR Manager, HR Viewer |
 | GET | /employees/:id/salary/history | Salary history | HR Manager, HR Viewer, Auditor |
 | PUT | /employees/:id/salary | Update salary (requires version) | HR Manager |
@@ -170,6 +186,7 @@ Ambiguity rules: unknown department or country names return suggestions rather t
 - Role-based access control enforced in the backend on every endpoint and at field level (salary fields stripped for Directory Users in directory, analytics and Q&A responses).
 - Passwords hashed with a modern algorithm (argon2 or bcrypt); short-lived JWTs; login rate limiting.
 - All inputs validated and sanitized; Prisma parameterized queries only; no raw SQL built from user input.
+- Import files stay in memory, are limited to 2 MB and 2,000 data rows, and are rejected when the type, signature, or columns are wrong. Cells that start with `=`, `+`, `-`, or `@` are rejected. The upload is not written to disk.
 - Audit entries record actor, role, action, entity, old and new values, reason and request ID; sensitive reads of salary data by non-HR roles are denied and logged.
 - CORS restricted to the configured frontend origin; secrets only through environment variables with a committed `.env.example`.
 - Salary update, history insert and audit insert execute in one transaction, or none are applied.
@@ -200,6 +217,7 @@ Ambiguity rules: unknown department or country names return suggestions rather t
 
 - **Unit:** salary validation rules, effective-date logic, current-salary resolution, median/percentile calculation, minimum-group suppression, intent parsing.
 - **Integration (API):** pagination across all 10,000 records without gaps or duplicates, search and filters, salary update creating history and audit records, rollback on failure, 409 on stale version, RBAC for each role, validation errors.
+- **Bulk import:** CSV and Excel templates, missing columns, invalid files, in-file and database duplicates, partial success, authorization, and the employee-directory import panel.
 - **Q&A:** every supported intent matches a direct database query; unsupported, ambiguous and injection inputs are rejected.
 - **Frontend:** component tests for directory and salary forms; one end-to-end flow (search, open employee, update salary, see history).
 - **Continuous check:** tests and lint run with a single command and in CI.
@@ -216,6 +234,7 @@ Ambiguity rules: unknown department or country names return suggestions rather t
 8. Role restrictions are enforced: Directory Users never receive salary data from any endpoint.
 9. Automated tests cover the core business rules and critical API behavior, and all pass.
 10. A reviewer can install, seed, run and demonstrate the app by following the README.
+11. An HR Manager can download either import template, upload it, preview invalid and duplicate rows, confirm the ready rows, and download an Excel feedback file. A second upload of the same people is skipped instead of creating duplicates.
 
 ## 15. Deliberate Non-Goals
 
@@ -227,10 +246,12 @@ Ambiguity rules: unknown department or country names return suggestions rather t
 
 ## 16. Assumptions and Trade-offs
 
-- **Stack:** React with TypeScript, NestJS, SQLite and Prisma. SQLite fits this scale and gives a zero-ops demo. It supports a single writer at a time and lacks a native median or decimal type, so medians are computed in the service layer and money uses integer minor units. The data layer stays behind Prisma so a move to PostgreSQL is a configuration and migration change rather than a rewrite.
-- **Architecture:** a modular monolith (auth, employees, salary, analytics, questions, audit modules) rather than distributed services.
-- **AI:** optional and constrained; deterministic calculations are the source of every compensation fact.
-- **Synthetic data:** realistic but not derived from any real person or company.
+- **Stack:** React with TypeScript, Vite, and Tailwind; NestJS, SQLite, and Prisma. SQLite fits this scale and gives a zero-ops demo. It supports a single writer at a time and lacks a native median or decimal type, so medians are computed in the service layer and money uses integer minor units. The data layer stays behind Prisma so a move to PostgreSQL is a configuration and migration change rather than a rewrite.
+- **Architecture:** a modular monolith (auth, employees, salary, analytics, questions, audit modules) rather than distributed services. The web app keeps its own response types. There is no shared package.
+- **Bulk import:** preview, then confirm. Confirm re-parses the file. Ready rows from one confirm are saved in one transaction; invalid rows are excluded and reported, and duplicates are skipped. The cap is 2,000 rows and 2 MB so one SQLite writer and a 30 second transaction stay reliable. Excel uses ExcelJS. CSV is parsed in the API. The feedback workbook is built in the browser from the API response, so the server does not store a second file. Amounts above the SQLite 32-bit integer limit are rejected even when `MAX_AMOUNT_MINOR` is higher.
+- **Sessions:** JWTs are short-lived by default (15 minutes when `JWT_EXPIRES_IN` is unset). The example env uses one day so a demo walkthrough does not expire mid-script.
+- **AI:** optional and constrained; deterministic calculations are the source of every compensation fact. Charts draw figures the API already calculated.
+- **Synthetic data:** realistic but not derived from any real person or company. Template samples use `EMP-900001` and `EMP-900002`, above the seeded `EMP-000001`–`EMP-010000` range.
 
 ## 17. Deliverables
 
@@ -238,13 +259,14 @@ Ambiguity rules: unknown department or country names return suggestions rather t
 - `.env.example`, seed and test commands, and optionally a Docker Compose file for one-command startup.
 - OpenAPI documentation.
 - Short architecture note with the key decisions, trade-offs and known limitations.
-- Demo script: the walkthrough of search, salary update with history and audit, analytics, and a supported and an unsupported question.
+- Demo script: the walkthrough of search, bulk import, salary update with history and audit, analytics, and a supported and an unsupported question.
 
 ## 18. Roadmap (After the Initial Release)
 
+Bulk employee import is implemented. See FR-6 for its limits.
+
 | Item | Why deferred |
 | --- | --- |
-| Bulk imports | Needs validation, error reporting and rollback design on top of reliable single updates |
 | Approval workflows | Depends on stable roles and the audit model |
 | Multi-level compensation reviews | Requires workflow and review-cycle data not in the core model |
 | Predictive salary recommendations | Requires trustworthy history, fairness review and explainability |

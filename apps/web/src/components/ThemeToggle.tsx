@@ -9,7 +9,9 @@ export function ThemeToggle({
   const night = theme === 'night';
   const tone =
     variant === 'topbar'
-      ? 'border border-white/40 bg-transparent text-white'
+      ? night
+        ? 'border border-white/40 bg-transparent text-white'
+        : 'border border-line bg-canvas text-ink'
       : 'border border-line bg-surface text-ink';
 
   return (

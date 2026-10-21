@@ -13,12 +13,14 @@ export function DataTable<T>({
   caption,
   emptyMessage,
   rowKey,
+  rowClassName,
 }: {
   rows: T[];
   columns: Column<T>[];
   caption: string;
   emptyMessage: string;
   rowKey?: (row: T) => string;
+  rowClassName?: (row: T) => string | undefined;
 }) {
   if (rows.length === 0) {
     return <EmptyState message={emptyMessage} />;
@@ -45,7 +47,7 @@ export function DataTable<T>({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={keyFor(row)}>
+            <tr key={keyFor(row)} className={rowClassName?.(row)}>
               {columns.map((column) => (
                 <td
                   key={column.key}

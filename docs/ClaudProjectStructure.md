@@ -1,81 +1,84 @@
-acme-salary-management/
+salary-management/
 ├── package.json                  # workspaces + root scripts (dev, test, seed, lint)
 ├── README.md                     # setup, seed, run, test, demo steps
-├── .env.example
-├── docker-compose.yml            # optional one-command start
+├── .env.example                  # JWT_EXPIRES_IN=1d for the demo; code default is 15m
 ├── docs/
-│   ├── requirements.md
+│   ├── REQUIREMENTS.md           # product rules, including bulk import (FR-6)
 │   ├── architecture.md           # decisions, trade-offs, limitations
-│   └── demo-script.md
-│
-├── packages/
-│   └── shared/                   # optional: types shared by api and web
-│       └── src/
-│           ├── roles.ts          # Role enum, permission map
-│           ├── currency.ts       # supported ISO 4217 codes
-│           └── dto-types.ts      # response shapes (Employee, SalaryRecord, QuestionResponse)
+│   ├── demo-script.md
+│   ├── ProjectStructure.md
+│   └── ClaudProjectStructure.md
 │
 ├── apps/
 │   ├── api/                      # NestJS
-│   │   ├── package.json
+│   │   ├── package.json          # exceljs for .xlsx templates and parsing
 │   │   ├── nest-cli.json
 │   │   ├── tsconfig.json
 │   │   ├── prisma/
 │   │   │   ├── schema.prisma
-│   │   │   ├── migrations/
 │   │   │   └── seed/
-│   │   │       ├── seed.ts            # entry: reset, generate, verify count == 10,000
+│   │   │       ├── seed.ts            # reset, generate, verify count == 10,000
 │   │   │       ├── generators.ts      # seeded RNG, names, departments, salary ranges
+│   │   │       ├── generators.spec.ts
 │   │   │       └── reference-data.ts  # countries, currencies, departments, titles
 │   │   ├── src/
 │   │   │   ├── main.ts                # bootstrap: validation pipe, Swagger, CORS, helmet
 │   │   │   ├── app.module.ts
+│   │   │   ├── configure-app.ts
 │   │   │   ├── config/                # typed env config + validation
 │   │   │   ├── common/
-│   │   │   │   ├── decorators/        # @Roles(), @CurrentUser()
+│   │   │   │   ├── decorators/        # @Roles(), @CurrentUser(), @RequestId()
 │   │   │   │   ├── guards/            # JwtAuthGuard, RolesGuard
-│   │   │   │   ├── filters/           # global exception filter (consistent error body)
+│   │   │   │   ├── filters/           # global exception filter, including upload size
 │   │   │   │   ├── interceptors/      # request ID, logging
-│   │   │   │   ├── pipes/
-│   │   │   │   └── utils/             # money (minor units), pagination helpers
+│   │   │   │   └── utils/             # money (minor units), dates, pagination
 │   │   │   ├── prisma/                # PrismaModule + PrismaService
 │   │   │   └── modules/
-│   │   │       ├── auth/              # login, JWT strategy, password hashing
-│   │   │       ├── users/
-│   │   │       ├── employees/         # controller, service, dto, repository
+│   │   │       ├── auth/              # login, JWT strategy, password hashing, rate limit
+│   │   │       ├── employees/         # list and detail
+│   │   │       │   ├── employee-import.controller.ts   # templates, preview, confirm
+│   │   │       │   ├── employee-import.service.ts      # one transaction for ready rows
+│   │   │       │   ├── employee-import.parse.ts        # CSV parser and ExcelJS
+│   │   │       │   ├── employee-import.validate.ts
+│   │   │       │   ├── employee-import.template.ts
+│   │   │       │   └── employee-import.columns.ts      # headers, 2 MB, 2,000 rows
 │   │   │       ├── salary/            # update (transaction), history, domain rules
-│   │   │       ├── analytics/         # query service, stats (median, percentiles), suppression
+│   │   │       ├── analytics/         # summary, distribution, stats, suppression
 │   │   │       ├── questions/         # Q&A
-│   │   │       │   ├── intents/       # intent definitions + query templates
-│   │   │       │   ├── interpreters/  # interpreter.interface.ts, rule-based.ts, llm.ts (optional)
-│   │   │       │   └── questions.service.ts
-│   │   │       ├── audit/             # append-only writer + read API
+│   │   │       │   ├── intents/
+│   │   │       │   └── interpreters/  # rule-based interpreter only
+│   │   │       ├── audit/             # append-only read API
 │   │   │       └── health/
 │   │   └── test/
-│   │       ├── unit/                  # or *.spec.ts beside the source files
-│   │       ├── e2e/                   # supertest: pagination, RBAC, salary update, 409, Q&A
-│   │       └── helpers/               # test DB setup, factories
+│   │       ├── e2e/                   # access, salary flow, employee import
+│   │       └── helpers/
 │   │
-│   └── web/                      # React + Vite + TypeScript
+│   └── web/                      # React + Vite + TypeScript + Tailwind
 │       ├── package.json
-│       ├── vite.config.ts        # dev proxy to /api
+│       ├── vite.config.ts
 │       ├── tsconfig.json
 │       ├── index.html
 │       └── src/
 │           ├── main.tsx
+│           ├── index.css              # theme tokens, including night mode
 │           ├── app/
 │           │   ├── router.tsx
-│           │   ├── providers.tsx          # QueryClient, auth context
-│           │   └── layout/
-│           ├── api/                       # fetch client, token handling, typed endpoints
+│           │   ├── providers.tsx      # theme, QueryClient, auth
+│           │   ├── theme-context.tsx
+│           │   └── layout/            # header nav, day/night, sign out
+│           ├── api/                   # JSON client plus multipart upload and download
 │           ├── features/
-│           │   ├── auth/                  # login page, route guards
-│           │   ├── employees/             # list, filters, search, pagination, detail
-│           │   ├── salary/                # update form, history table, conflict handling
-│           │   ├── analytics/             # summary tables, distribution chart
-│           │   ├── questions/             # ask box, supported examples, result view
-│           │   └── audit/                 # audit table with filters
-│           ├── components/                # shared UI: DataTable, Pagination, ErrorState, EmptyState
+│           │   ├── auth/
+│           │   ├── employees/         # list, filters, pagination, bulk import
+│           │   ├── salary/            # update form, next valid effective date
+│           │   ├── analytics/         # summary, currency filter, charts
+│           │   ├── questions/
+│           │   └── audit/
+│           ├── components/            # Button, Field, Card, DataTable, BarChart, states
 │           ├── hooks/
-│           ├── lib/                       # formatMoney, date helpers
-│           └── test/                      # Vitest + Testing Library setup
+│           ├── lib/                   # formatMoney, nextIsoDate
+│           └── test/
+│
+└── .github/workflows/ci.yml      # lint and test
+
+Not in this repository: a shared types package, Docker Compose, a users module, and an LLM question interpreter. Import and API response types stay in the app that uses them. Trade-offs for those choices are in `docs/architecture.md`.

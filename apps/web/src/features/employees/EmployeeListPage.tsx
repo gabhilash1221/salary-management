@@ -18,6 +18,7 @@ import {
   STATUSES,
 } from '../../lib/formatMoney';
 import { useAuth } from '../auth/auth-context';
+import { EmployeeImport } from './EmployeeImport';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -66,6 +67,9 @@ export function EmployeeListPage() {
   return (
     <section>
       <h1 className="mb-4 text-2xl">Employees</h1>
+      {session?.role === 'HR_MANAGER' ? (
+        <EmployeeImport token={session.token} />
+      ) : null}
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="Search" htmlFor="search">
           <input
