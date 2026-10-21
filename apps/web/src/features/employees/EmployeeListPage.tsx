@@ -30,7 +30,7 @@ import { DeleteEmployeeDialog, EmployeeFormDialog } from './EmployeeDialogs';
 import { EmployeeImport } from './EmployeeImport';
 import { EmployeeRowMenu } from './EmployeeRowMenu';
 
-const SEARCH_DEBOUNCE_MS = 500;
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function EmployeeListPage() {
   const { session } = useAuth();
